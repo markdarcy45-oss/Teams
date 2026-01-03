@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Sign in{% endblock %}
+
+{% block head %}
+<style>
+  .login-card {
+    max-width: 420px;
+    margin: 32px auto;
+    padding: 20px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+  }
+  .login-card h1 { margin: 0 0 12px; font-size: 1.4rem; }
+  .form-row { margin-bottom: 12px; }
+  label { display:block; font-weight:600; margin-bottom:6px; }
+  input[type="text"], input[type="password"] {
+    width:100%; padding:10px 12px; border-radius:6px; border:1px solid #ddd;
+    font-size:14px;
+  }
+  .hint { color:#666; font-size:0.9rem; margin-top:6px; }
+  .err { color:#b91c1c; margin-bottom:8px; font-weight:600; }
+  .btn { display:inline-block; padding:10px 14px; border-radius:8px; background:#2a6fdb; color:#fff; border:none; cursor:pointer; font-weight:600; }
+  .small-link { margin-left:12px; font-size:0.9rem; color:#2a6fdb; text-decoration:none; vertical-align:middle; }
+  .note { margin-top:10px; font-size:0.9rem; color:#666; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-card" role="main" aria-labelledby="loginHeading">
+  <h1 id="loginHeading">Sign in</h1>
+
+  {% if error %}
+    <div class="err" role="alert">{{ error }}</div>
+  {% endif %}
+
+  <form method="post" action="{{ url_for('login') }}" autocomplete="on" novalidate>
+    <div class="form-row">
+      <label for="username">Username</label>
+      <input id="username" name="username" type="text" autocomplete="username" required autofocus
+             value="{{ request.form.username or '' }}">
+    </div>
+
+    <div class="form-row">
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button type="submit" class="btn">Sign in</button>
+      <a class="small-link" href="{{ url_for('login') }}?action=recover">Forgot password?</a>
+    </div>
+
+    <div class="note">Admin demo credentials: <strong>admin / (your password)</strong></div>
+  </form>
+</div>
+
+<script>
+  // small UX: focus username, show simple client-side validation
+  (function(){
+    try {
+      const u = document.getElementById('username');
+      if (u && !u.value) u.focus();
+    } catch(e){ /* ignore */ }
+  })();
+</script>
+{% endblock %}
