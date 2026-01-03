@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>{% block title %}Teams App{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    --bg:#fafafa; --panel:#fff; --shadow:0 1px 8px rgba(0,0,0,.08);
+    --ink:#222; --muted:#666; --brand:#2a6fdb;
+    --active-color: #ffd54f; /* Yellow highlight color */
+  }
+  
+  * { box-sizing: border-box; }
+  
+  body { 
+    margin: 0; 
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; 
+    background: var(--bg); 
+    color: var(--ink); 
+  }
+  
+  nav {
+    background: #333; color: #fff; display: flex; align-items: center; gap: 18px;
+    padding: 10px 16px; position: sticky; top: 0; z-index: 10;
+  }
+  
+  /* --- Navigation Links --- */
+  nav a {
+    color: #fff; 
+    text-decoration: none; 
+    font-weight: 600;
+    padding: 4px 0;
+    border-bottom: 2px solid transparent; /* Prevents layout jump when active */
+    transition: color 0.2s, border-bottom-color 0.2s;
+  }
+  
+  nav a:hover {
+    color: var(--active-color);
+  }
+
+  /* --- Active State Logic --- */
+  nav a.active {
+    color: var(--active-color);
+    border-bottom: 2px solid var(--active-color); /* Adds the underline indicator */
+  }
+
+  .container {
+    max-width: 1100px; margin: 22px auto; background: var(--panel); border-radius: 10px;
+    box-shadow: var(--shadow); padding: 18px;
+  }
+  
+  h1 { margin: 0 0 12px; }
+  .subtle { color: var(--muted); font-size: 13px; }
+</style>
+
+  {% block head %}{% endblock %}
+</head>
+<body>
+<nav>
+  <a href="/players" class="{{ 'active' if request.path == '/players' else '' }}">Players</a>
+  <a href="/" class="{{ 'active' if request.path == '/' else '' }}">Teams</a>
+  <a href="/standings" class="{{ 'active' if request.path == '/standings' else '' }}">Standings</a>
+  
+  {% if current_user.is_authenticated %}
+    <a href="/logout" style="margin-left: auto; color: #ff4d4d;">Logout</a>
+  {% endif %}
+</nav>
+
+  <div class="container">
+    {% block content %}{% endblock %}
+  </div>
+
+  {% block scripts %}{% endblock %}
+  <script src="{{ url_for('static', filename='teams.js') }}"></script>
+</body>
+</html>
