@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page">
+    <div class="card">
+        <h1>Match Results</h1>
+
+        <div id="errorMsg" class="error-msg"></div>
+        <div id="infoMsg" class="info-msg" style="display:none;">Teams loaded successfully.</div>
+
+        <div class="meta-row">
+            <strong>Game Date:</strong>
+            <input id="gameDateInput" name="date" type="date" value="">
+            <input id="gameIdInput" type="hidden" value="">
+            <button id="loadTeamsBtn" class="btn primary">Load Teams</button>
+        </div>
+
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Team</th>
+                        <th>Player Name</th>
+                        <th>Points (0, 1, 3)</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody">
+                    {% for player in players %}
+                    <tr data-player-id="{{ player.player_id }}" data-team="{{ player.team_name }}">
+                        <td>{{ loop.index }}</td>
+                        <td>{{ player.team_name }}</td>
+                        <td>{{ player.name }}</td>
+                        <td>
+                            <select class="points-select">
+                                <option value="0">0</option>
+                                <option value="1">1</option>
+                                <option value="3">3</option>
+                            </select>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="form-actions">
+            <div id="pointsStatus" class="note">Select a date and load teams to begin.</div>
+            <button id="submitResultsBtn" class="btn results" disabled>Submit Results</button>
+        </div>
+
+        <p class="note">Note: Points allowed per player are 0, 1 or 3. Totals must match expected values for the player count.</p>
+    </div>
+</div>
+
+<style>
+  /* 1. Override base.html container to remove max-width and centering */
+  .container { 
+    max-width: none !important; 
+    margin: 0 !important; 
+    background: transparent !important; 
+    box-shadow: none !important; 
+  }
+
+  .page { 
+    padding: 20px; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: flex-start; /* Snap everything to the left */
+  }
+
+  .card { 
+    padding: 20px; 
+    border-radius: 8px; 
+    background: #fff; 
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    width: fit-content; /* Only as wide as the table */
+    display: inline-block; 
+  }
+
+  .table { 
+    width: auto; 
+    border-collapse: collapse; 
+    margin-top: 10px;
+  }
+
+  /* Left align headers and data */
+  .table th, .table td { 
+    padding: 10px 15px 10px 0; /* Tight right padding, 0 left padding */
+    border-bottom: 1px solid #eee; 
+    text-align: left; 
+  }
+
+  /* Column-specific sizing */
+  .table th:nth-child(1), .table td:nth-child(1) { width: 30px; }  /* # */
+  .table th:nth-child(2), .table td:nth-child(2) { width: 90px; }  /* Team */
+  .table th:nth-child(3), .table td:nth-child(3) { width: 200px; } /* Name */
+  .table th:nth-child(4), .table td:nth-child(4) { width: 80px; }  /* Points */
+
+  .points-select { 
+    width: 70px; /* Snug fit for single digits */
+    padding: 4px; 
+    cursor: pointer; 
+  }
+
+  .meta-row { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; }
+  .form-actions { margin-top: 15px; display: flex; align-items: center; gap: 15px; }
+  .note { margin-top: 10px; max-width: 400px; }
+</style>
+
+<script>
+// Add this inside your <script> tag at the top
+(function setDefaultDate() {
+    const dateInput = document.getElementById('gameDateInput');
+    if (dateInput && !dateInput.value) {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        dateInput.value = `${yyyy}-${mm}-${dd}`;
+    }
+})();
+
+(function () {
+  // Select elements
+  const dateInput = document.getElementById('gameDateInput');
+  const gameIdInput = document.getElementById('gameIdInput');
+  const loadBtn = document.getElementById('loadTeamsBtn');
+  const resultsBody = document.getElementById('resultsBody');
+  const infoMsg = document.getElementById('infoMsg');
+  const errorMsg = document.getElementById('errorMsg');
+  const pointsStatus = document.getElementById('pointsStatus');
+  const submitBtn = document.getElementById('submitResultsBtn');
+
+  function escapeHtml(s){ return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+
+  async function loadTeams() {
+    const date = dateInput.value;
+    if (!date) { errorMsg.textContent = "Pick a game date first."; return; }
+    
+    errorMsg.textContent = "Loading...";
+    infoMsg.style.display = "none";
+
+    try {
+      // Trying the /get_locked_teams endpoint
+      const resp = await fetch(`/get_locked_teams?date=${encodeURIComponent(date)}`);
+      const payload = await resp.json();
+
+      if (!resp.ok) {
+        errorMsg.textContent = payload.error || "No teams found.";
+        resultsBody.innerHTML = "";
+        return;
+      }
+
+      if (payload && payload.teams) {
+          gameIdInput.value = payload.game_id || '';
+          renderTeams(payload.teams);
+          errorMsg.textContent = "";
+          infoMsg.style.display = "block";
+      }
+    } catch (err) {
+      errorMsg.textContent = "Network error loading teams. Check your terminal.";
+      console.error(err);
+    }
+  }
+
+  function renderTeams(teams) {
+    resultsBody.innerHTML = "";
+    let idx = 1;
+    ['Orange','Yellow'].forEach(teamName => {
+      const teamPlayers = teams[teamName] || [];
+      teamPlayers.forEach(p => {
+        const tr = document.createElement('tr');
+        // Standardizing on player_id
+        tr.dataset.playerId = p.player_id || p.id;
+        tr.dataset.team = teamName;
+        tr.innerHTML = `
+          <td>${idx}</td>
+          <td>${escapeHtml(teamName)}</td>
+          <td>${escapeHtml(p.name)}</td>
+          <td>
+            <select class="points-select">
+              <option value="0">0</option>
+              <option value="1">1</option>
+              <option value="3">3</option>
+            </select>
+          </td>`;
+        resultsBody.appendChild(tr);
+        idx++;
+      });
+    });
+    attachChangeHandlers();
+    validateTotals();
+  }
+
+  function validateTotals() {
+    const selects = Array.from(resultsBody.querySelectorAll('.points-select'));
+    const total = selects.reduce((s, sel) => s + parseInt(sel.value), 0);
+    const count = selects.length;
+    
+    if (count === 0) { 
+        submitBtn.disabled = true; 
+        pointsStatus.textContent = "Load teams to begin.";
+        return; 
+    }
+
+    // Validation Logic: 12 players -> 12/18 pts, 10 players -> 10/15 pts
+    let allowed = [count]; // Default fallback
+    if (count === 12) allowed = [12, 18];
+    if (count === 10) allowed = [10, 15];
+
+    const ok = allowed.includes(total);
+    
+    pointsStatus.textContent = `Total Points: ${total} | Players: ${count}`;
+    pointsStatus.style.color = ok ? "green" : "red";
+    submitBtn.disabled = !ok;
+  }
+
+  function attachChangeHandlers() {
+    resultsBody.querySelectorAll('.points-select').forEach(sel => {
+      sel.addEventListener('change', validateTotals);
+    });
+  }
+
+  submitBtn.addEventListener('click', async () => {
+    errorMsg.textContent = "";
+    const payload = {
+      Date: dateInput.value,
+      results: Array.from(resultsBody.querySelectorAll('tr')).map(tr => ({
+        player_id: parseInt(tr.dataset.playerId),
+        points: parseInt(tr.querySelector('.points-select').value)
+      }))
+    };
+
+    try {
+      const resp = await fetch('/results', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const result = await resp.json();
+      if (resp.ok) {
+          window.location.href = '/standings';
+      } else {
+          errorMsg.textContent = result.error || "Failed to save.";
+      }
+    } catch (err) {
+      errorMsg.textContent = "Connection error while saving.";
+    }
+  });
+
+  // Attach the event listener to the correct button ID
+  loadBtn.addEventListener('click', loadTeams);
+})();
+</script>
+{% endblock %}
