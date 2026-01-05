@@ -106,11 +106,13 @@
         </div>
       </div>
 
-      <div style="margin-top:14px; display:flex; gap:12px; align-items:center;">
-        <label style="margin-right:6px;"><strong>Lock these teams:</strong></label>
-        <button id="lockBtn" class="btn lock">Lock Teams</button>
-        <button id="unlockBtn" class="btn unlock">Unlock</button>
-        <a id="goToResultsLink" class="btn results" href="/results?date={{ selected_date or '' }}">Go To Results</a>
+<div style="margin-top:14px; display:flex; gap:12px; align-items:center;">
+        {% if current_user.is_admin %}
+          <label style="margin-right:6px;"><strong>Admin Actions:</strong></label>
+          <button id="lockBtn">Lock Teams</button>
+          <button id="unlockBtn">Unlock Teams</button>
+          <a id="goResultsBtn" href="/results" class="btn primary">Go To Results</a>
+        {% endif %}
       </div>
 
       <div id="lockMsg" style="margin-top:10px;color:green;"></div>
@@ -432,27 +434,33 @@ generateBtn && generateBtn.addEventListener("click", async () => {
 
   // Render teams into UI and populate swap selects
 // Render teams into UI and populate swap selects
-  function renderTeams(t1, t2, total1=0, total2=0, diff=0) {
-    // Correctly map keys to lowercase to match app.py response
-    window.currentTeam1 = (t1 || []).map(x => ({ player: x.player, rank: x.rank }));
-    window.currentTeam2 = (t2 || []).map(x => ({ player: x.player, rank: x.rank }));
+function renderTeams(t1, t2, total1=0, total2=0, diff=0) {
+    // FIX: Check for both lowercase 'player/name' and uppercase 'Player/Name'
+    window.currentTeam1 = (t1 || []).map(x => ({ 
+        player: x.player || x.Name || x.name || "Unknown", 
+        rank: x.rank || x.Rank || 0 
+    }));
+    window.currentTeam2 = (t2 || []).map(x => ({ 
+        player: x.player || x.Name || x.name || "Unknown", 
+        rank: x.rank || x.Rank || 0 
+    }));
 
     // Populate Orange Team List
     if (team1List) {
-      team1List.innerHTML = "";
+      team1List.innerHTML = ""; // This clears the old list for the reshuffle
       window.currentTeam1.forEach(p => {
         const li = document.createElement("li");
-        li.innerHTML = `<span>${esc(p.player)}</span><span>${esc(String(p.rank||0))}</span>`;
+        li.innerHTML = `<span>${esc(p.player)}</span><span>${esc(String(p.rank))}</span>`;
         team1List.appendChild(li);
       });
     }
 
     // Populate Yellow Team List
     if (team2List) {
-      team2List.innerHTML = "";
+      team2List.innerHTML = ""; // This clears the old list for the reshuffle
       window.currentTeam2.forEach(p => {
         const li = document.createElement("li");
-        li.innerHTML = `<span>${esc(p.player)}</span><span>${esc(String(p.rank||0))}</span>`;
+        li.innerHTML = `<span>${esc(p.player)}</span><span>${esc(String(p.rank))}</span>`;
         team2List.appendChild(li);
       });
     }
