@@ -36,9 +36,10 @@ def get_db_connection():
 # AUTHENTICATION MODELS & HELPERS
 # =================================================================
 class User(UserMixin):
-    def __init__(self, user_id, username):
+    def __init__(self, user_id, username, is_admin):
         self.id = str(user_id)
         self.username = username
+        self.is_admin = bool(is_admin) # Store admin status
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -46,13 +47,16 @@ login_manager.login_view = 'login'
 
 @login_manager.user_loader
 def load_user(user_id):
-    if user_id is None: return None
     conn = get_db_connection()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT id, username FROM users WHERE id = %s", (int(user_id),))
+        # Fetch id, username, and is_admin
+        cur.execute("SELECT id, username, is_admin FROM users WHERE id = %s", (int(user_id),))
         row = cur.fetchone()
-        return User(row['id'], row['username']) if row else None
+        if row:
+            # Pass all three required arguments to the User class
+            return User(row['id'], row['username'], row['is_admin'])
+        return None
     finally:
         conn.close()
 
@@ -84,11 +88,14 @@ def login():
         pw_input = request.form.get('password', '').strip()
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("SELECT id, username, password_hash FROM users WHERE username = %s", (username,))
+        # FIX: Added is_admin to the SELECT statement
+        cur.execute("SELECT id, username, password_hash, is_admin FROM users WHERE username = %s", (username,))
         db_user = cur.fetchone()
         conn.close()
+        
         if db_user and check_password_hash(db_user['password_hash'], pw_input):
-            login_user(User(db_user['id'], db_user['username']))
+            # FIX: Pass db_user['is_admin'] as the third argument
+            login_user(User(db_user['id'], db_user['username'], db_user['is_admin']))
             return redirect(url_for('teams_page'))
         return "Invalid username or password", 401
     return render_template('login.html')
@@ -264,6 +271,9 @@ def swap_locked_players():
 @app.route("/lock_teams", methods=["POST"])
 @login_required
 def lock_teams():
+    if not getattr(current_user, 'is_admin', False):
+        return jsonify({"error": "Admin access required"}), 403
+    
     """Saves the final team composition for a specific date."""
     data = request.get_json()
     game_date, team1, team2 = data.get("date"), data.get("team1", []), data.get("team2", [])
@@ -288,6 +298,9 @@ def lock_teams():
 @app.route("/unlock_teams", methods=["POST"])
 @login_required
 def unlock_teams():
+    if not getattr(current_user, 'is_admin', False):
+        return jsonify({"error": "Admin access required"}), 403
+    
     """Clears team locks for a specific date."""
     data = request.json
     date_str = data.get("date") or data.get("Date")
@@ -306,6 +319,9 @@ def unlock_teams():
 @app.route("/api/get_locked_teams")
 @login_required
 def get_locked_teams():
+    if not getattr(current_user, 'is_admin', False):
+        return jsonify({"error": "Admin access required"}), 403
+    
     """Loads locked players to populate the Results entry form."""
     date_str = request.args.get("date") or request.args.get("Date")
     if not date_str: return jsonify({"error": "No date provided"}), 400
@@ -323,6 +339,9 @@ def get_locked_teams():
 @app.route("/results", methods=["GET", "POST"])
 @login_required
 def results_entry_page():
+    if not getattr(current_user, 'is_admin', False):
+        return jsonify({"error": "Admin access required"}), 403
+    
     """Submits match results with point validation rules."""
     if request.method == "POST":
         data = request.get_json(silent=True) or {}
