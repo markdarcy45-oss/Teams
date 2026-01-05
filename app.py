@@ -388,44 +388,33 @@ def standings_leaderboard_page():
 # =================================================================    
 @app.route("/repair-database-v2")
 def repair_database_v2():
-    """Bypasses paywalls to fix the missing is_admin column and rankview."""
     conn = get_db_connection()
     cur = conn.cursor()
     try:
-        # 1. Create is_admin column if missing
+        # 1. Fix the users table
         cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE;")
-        
-        # 2. Grant admin status to your username (ensure 'admin' matches your login)
         cur.execute("UPDATE users SET is_admin = TRUE WHERE username = 'admin';")
         
-        # 3. Create the missing tables if they don't exist
+        # 2. FORCE REBUILD THE VIEW
+        # We drop it first to avoid the "cannot drop columns" error
+        cur.execute("DROP VIEW IF EXISTS rankview CASCADE;") 
+        
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS players (
-                id SERIAL PRIMARY KEY,
-                name VARCHAR(100) NOT NULL,
-                game_id INTEGER DEFAULT 1
-            );
-            CREATE TABLE IF NOT EXISTS results (
-                id SERIAL PRIMARY KEY,
-                match_date DATE NOT NULL,
-                player_id INTEGER REFERENCES players(id),
-                points INTEGER NOT NULL,
-                submitted_by INTEGER,
-                UNIQUE(player_id, match_date)
-            );
-        """)
-
-        # 4. Create the Rankview (Standings) logic
-        cur.execute("""
-            CREATE OR REPLACE VIEW rankview AS
-            SELECT p.name AS player, SUM(r.points) AS total_points, 
-            COUNT(r.match_date) AS matches_played, ROUND(AVG(r.points), 2) AS avg_points
-            FROM players p LEFT JOIN results r ON p.id = r.player_id GROUP BY p.name;
+            CREATE VIEW rankview AS
+            SELECT 
+                p.name AS player,
+                SUM(r.points) AS total_points, 
+                COUNT(r.match_date) AS matches_played, 
+                ROUND(AVG(r.points), 2) AS avg_points
+            FROM players p 
+            LEFT JOIN results r ON p.id = r.player_id 
+            GROUP BY p.name;
         """)
         
         conn.commit()
         return "<h1>Success!</h1><p>Database structure fixed. You can now login.</p>"
     except Exception as e:
+        conn.rollback() # Undo changes if it fails
         return f"<h1>Error</h1><p>{str(e)}</p>"
     finally:
         conn.close()
