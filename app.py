@@ -391,31 +391,29 @@ def repair_database_v2():
     conn = get_db_connection()
     cur = conn.cursor()
     try:
-        # 1. Fix the users table
+        # STEP 1: FIX USERS TABLE (This is the most important part)
         cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE;")
         cur.execute("UPDATE users SET is_admin = TRUE WHERE username = 'admin';")
+        conn.commit() # SAVE THIS IMMEDIATELY so login works even if Step 2 fails
         
-        # 2. FORCE REBUILD THE VIEW
-        # We drop it first to avoid the "cannot drop columns" error
-        cur.execute("DROP VIEW IF EXISTS rankview CASCADE;") 
-        
-        cur.execute("""
-            CREATE VIEW rankview AS
-            SELECT 
-                p.name AS player,
-                SUM(r.points) AS total_points, 
-                COUNT(r.match_date) AS matches_played, 
-                ROUND(AVG(r.points), 2) AS avg_points
-            FROM players p 
-            LEFT JOIN results r ON p.id = r.player_id 
-            GROUP BY p.name;
-        """)
-        
-        conn.commit()
-        return "<h1>Success!</h1><p>Database structure fixed. You can now login.</p>"
+        # STEP 2: FIX THE VIEW (The part that caused the 'drop columns' error)
+        try:
+            cur.execute("DROP VIEW IF EXISTS rankview CASCADE;")
+            cur.execute("""
+                CREATE VIEW rankview AS
+                SELECT p.name AS player, SUM(r.points) AS total_points, 
+                       COUNT(r.match_date) AS matches_played, ROUND(AVG(r.points), 2) AS avg_points
+                FROM players p LEFT JOIN results r ON p.id = r.player_id GROUP BY p.name;
+            """)
+            conn.commit()
+        except Exception as view_error:
+            print(f"View update failed but user table is fixed: {view_error}")
+            conn.rollback() # Rollback only the view part
+
+        return "<h1>Success!</h1><p>User table fixed. You can now login. (View update attempted)</p>"
     except Exception as e:
-        conn.rollback() # Undo changes if it fails
-        return f"<h1>Error</h1><p>{str(e)}</p>"
+        conn.rollback()
+        return f"<h1>Critical Error</h1><p>{str(e)}</p>"
     finally:
         conn.close()
 
