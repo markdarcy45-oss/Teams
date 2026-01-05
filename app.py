@@ -66,7 +66,8 @@ def handle_session_logic():
         return
     
     session.permanent = True
-    AUTH_EXEMPT = {"login", "logout", "standings_leaderboard_page"}
+    # ADD 'repair_database_v2' to this list below:
+    AUTH_EXEMPT = {"login", "logout", "standings_leaderboard_page", "repair_database_v2"}
     endpoint = (request.endpoint or "").split(".")[-1]
     
     if endpoint not in AUTH_EXEMPT and not current_user.is_authenticated:
@@ -385,7 +386,7 @@ def standings_leaderboard_page():
 # =================================================================
 # 5. Repair DB
 # =================================================================    
-    @app.route("/repair-database-v2")
+@app.route("/repair-database-v2")
 def repair_database_v2():
     """Bypasses paywalls to fix the missing is_admin column and rankview."""
     conn = get_db_connection()
