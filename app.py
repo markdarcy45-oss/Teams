@@ -389,32 +389,28 @@ def standings_leaderboard_page():
 @app.route("/repair-database-v2")
 def repair_database_v2():
     conn = get_db_connection()
+    # We set autocommit to True so every line saves immediately
+    conn.autocommit = True 
     cur = conn.cursor()
+    output = []
+    
     try:
-        # STEP 1: FIX USERS TABLE (This is the most important part)
-        cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE;")
-        cur.execute("UPDATE users SET is_admin = TRUE WHERE username = 'admin';")
-        conn.commit() # SAVE THIS IMMEDIATELY so login works even if Step 2 fails
-        
-        # STEP 2: FIX THE VIEW (The part that caused the 'drop columns' error)
+        # 1. ADD THE COLUMN (The only thing needed for login)
         try:
-            cur.execute("DROP VIEW IF EXISTS rankview CASCADE;")
-            cur.execute("""
-                CREATE VIEW rankview AS
-                SELECT p.name AS player, SUM(r.points) AS total_points, 
-                       COUNT(r.match_date) AS matches_played, ROUND(AVG(r.points), 2) AS avg_points
-                FROM players p LEFT JOIN results r ON p.id = r.player_id GROUP BY p.name;
-            """)
-            conn.commit()
-        except Exception as view_error:
-            print(f"View update failed but user table is fixed: {view_error}")
-            conn.rollback() # Rollback only the view part
+            cur.execute("ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE;")
+            output.append("Column 'is_admin' added.")
+        except Exception as e:
+            output.append(f"Column info: {str(e)}")
 
-        return "<h1>Success!</h1><p>User table fixed. You can now login. (View update attempted)</p>"
+        # 2. SET ADMIN STATUS
+        cur.execute("UPDATE users SET is_admin = TRUE WHERE username = 'admin';")
+        output.append("Admin status updated.")
+
+        return f"<h1>Success!</h1><p>{'<br>'.join(output)}</p><p>Go to /login now.</p>"
     except Exception as e:
-        conn.rollback()
-        return f"<h1>Critical Error</h1><p>{str(e)}</p>"
+        return f"<h1>Error</h1><p>{str(e)}</p>"
     finally:
+        cur.close()
         conn.close()
 
 if __name__ == "__main__":
