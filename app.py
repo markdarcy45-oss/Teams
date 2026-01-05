@@ -67,7 +67,7 @@ def handle_session_logic():
     
     session.permanent = True
     # ADD 'repair_database_v2' to this list below:
-    AUTH_EXEMPT = {"login", "logout", "standings_leaderboard_page", "repair_database_v2"}
+    AUTH_EXEMPT = {"login", "logout", "standings_leaderboard_page"}
     endpoint = (request.endpoint or "").split(".")[-1]
     
     if endpoint not in AUTH_EXEMPT and not current_user.is_authenticated:
@@ -383,35 +383,5 @@ def standings_leaderboard_page():
     conn.close()
     return render_template("results_page.html", rankview=rows)
     
-# =================================================================
-# 5. Repair DB
-# =================================================================    
-@app.route("/repair-database-v2")
-def repair_database_v2():
-    conn = get_db_connection()
-    # We set autocommit to True so every line saves immediately
-    conn.autocommit = True 
-    cur = conn.cursor()
-    output = []
-    
-    try:
-        # 1. ADD THE COLUMN (The only thing needed for login)
-        try:
-            cur.execute("ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE;")
-            output.append("Column 'is_admin' added.")
-        except Exception as e:
-            output.append(f"Column info: {str(e)}")
-
-        # 2. SET ADMIN STATUS
-        cur.execute("UPDATE users SET is_admin = TRUE WHERE username = 'admin';")
-        output.append("Admin status updated.")
-
-        return f"<h1>Success!</h1><p>{'<br>'.join(output)}</p><p>Go to /login now.</p>"
-    except Exception as e:
-        return f"<h1>Error</h1><p>{str(e)}</p>"
-    finally:
-        cur.close()
-        conn.close()
-
 if __name__ == "__main__":
     app.run(debug=True)
