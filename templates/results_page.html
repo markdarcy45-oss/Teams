@@ -10,7 +10,7 @@
         
         <div class="meta-row">
             <input id="gameDateInput" type="date">
-            <{% if current_user.is_admin %}
+            {% if current_user.is_admin %}
 			<button id="loadTeamsBtn">Load Teams</button>
 			{% endif %}
         </div>
