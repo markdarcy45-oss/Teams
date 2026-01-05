@@ -21,57 +21,80 @@
   }
   
   nav {
-    background: #333; color: #fff; display: flex; align-items: center; gap: 18px;
-    padding: 10px 16px; position: sticky; top: 0; z-index: 10;
+    background: #333; 
+    color: #fff; 
+    display: flex; 
+    align-items: center; 
+    gap: 15px;
+    padding: 10px 20px; 
+    position: sticky; 
+    top: 0; 
+    z-index: 10;
   }
   
-  /* --- Navigation Links --- */
   nav a {
     color: #fff; 
     text-decoration: none; 
     font-weight: 600;
-    padding: 4px 0;
-    border-bottom: 2px solid transparent; /* Prevents layout jump when active */
-    transition: color 0.2s, border-bottom-color 0.2s;
+    padding: 6px 12px;
+    transition: color 0.2s;
   }
   
-  nav a:hover {
-    color: var(--active-color);
-  }
-
-  /* --- Active State Logic --- */
+  nav a:hover { opacity: 0.8; }
+  
+  /* --- YELLOW UNDERLINE STYLE --- */
   nav a.active {
-    color: var(--active-color);
-    border-bottom: 2px solid var(--active-color); /* Adds the underline indicator */
+    color: var(--active-color) !important;
+    text-decoration: underline !important;
+    text-underline-offset: 6px;
+    text-decoration-thickness: 2px;
   }
 
   .container {
-    max-width: 1100px; margin: 22px auto; background: var(--panel); border-radius: 10px;
-    box-shadow: var(--shadow); padding: 18px;
+    max-width: 1100px; 
+    margin: 22px auto; 
+    background: var(--panel); 
+    border-radius: 10px;
+    box-shadow: var(--shadow); 
+    padding: 18px;
   }
-  
-  h1 { margin: 0 0 12px; }
-  .subtle { color: var(--muted); font-size: 13px; }
 </style>
 
   {% block head %}{% endblock %}
 </head>
 <body>
+
 <nav>
   <a href="/players" class="{{ 'active' if request.path == '/players' else '' }}">Players</a>
   <a href="/" class="{{ 'active' if request.path == '/' else '' }}">Teams</a>
   <a href="/standings" class="{{ 'active' if request.path == '/standings' else '' }}">Standings</a>
   
   {% if current_user.is_authenticated %}
-    <a href="/logout" style="margin-left: auto; color: #ff4d4d;">Logout</a>
+    <div style="margin-left: auto; display: flex; align-items: center; gap: 12px;">
+      <span style="font-size: 0.85em; color: #aaa;">User: <strong style="color: #fff;">{{ current_user.username }}</strong></span>
+      
+      <div style="width: 1px; height: 16px; background: #555;"></div>
+
+      {% if current_user.is_admin %}
+        <span style="background-color: #28a745; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: bold; letter-spacing: 0.5px;">
+          ADMIN
+        </span>
+      {% else %}
+        <span style="background-color: #007bff; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: bold; letter-spacing: 0.5px;">
+          READ-ONLY
+        </span>
+      {% endif %}
+
+      <a href="/logout" style="color: #ff4d4d; text-decoration: none; font-size: 0.9em; margin-left: 5px;">Logout</a>
+    </div>
   {% endif %}
 </nav>
 
-  <div class="container">
-    {% block content %}{% endblock %}
-  </div>
+<div class="container">
+  {% block content %}{% endblock %}
+</div>
 
-  {% block scripts %}{% endblock %}
-  <script src="{{ url_for('static', filename='teams.js') }}"></script>
+{% block scripts %}{% endblock %}
+
 </body>
 </html>
