@@ -3,6 +3,7 @@
 # =================================================================
 import os
 import logging
+import random
 from datetime import datetime
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -186,10 +187,11 @@ def teams_page():
 @app.route("/generate_teams", methods=["POST"])
 @login_required
 def generate_teams():
-    """Balances selected players into two teams based on their rank."""
     data = request.get_json()
     selected_names = data.get("players", [])
-    if not selected_names: return jsonify({"error": "No players selected"}), 400
+    if not selected_names: 
+        return jsonify({"error": "No players selected"}), 400
+    
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""
@@ -198,15 +200,50 @@ def generate_teams():
         LEFT JOIN rankview rv ON LOWER(p.name) = LOWER(rv.player)
         WHERE p.name = ANY(%s) AND p.active = 1
     """, (selected_names,))
+    
     pool = cur.fetchall()
     conn.close()
-    sorted_pool = sorted(pool, key=lambda x: x['rank'], reverse=True)
-    t1, t2 = [], []
-    tot1, tot2 = 0, 0
-    for p in sorted_pool:
-        if tot1 <= tot2: t1.append(p); tot1 += p['rank']
-        else: t2.append(p); tot2 += p['rank']
-    return jsonify({"team1": t1, "team2": t2, "total1": tot1, "total2": tot2, "difference": abs(tot1-tot2)})
+
+    if not pool:
+        return jsonify({"error": "No valid players found"}), 400
+
+    half_size = len(pool) // 2
+    
+    best_t1, best_t2 = [], []
+    min_diff = float('inf')
+    best_sum1, best_sum2 = 0, 0
+
+    # Best of 100 to find the most balanced split
+    for _ in range(100):
+        shuffled_pool = list(pool)
+        random.shuffle(shuffled_pool)
+        
+        temp_t1 = shuffled_pool[:half_size]
+        temp_t2 = shuffled_pool[half_size:]
+        
+        sum1 = sum(p['rank'] for p in temp_t1)
+        sum2 = sum(p['rank'] for p in temp_t2)
+        current_diff = abs(sum1 - sum2)
+        
+        if current_diff < min_diff:
+            min_diff = current_diff
+            best_t1, best_t2 = temp_t1, temp_t2
+            best_sum1, best_sum2 = sum1, sum2
+        
+        if min_diff <= 1: 
+            break
+
+    # --- FIX: Sort the resulting teams by rank descending ---
+    best_t1.sort(key=lambda x: x['rank'], reverse=True)
+    best_t2.sort(key=lambda x: x['rank'], reverse=True)
+
+    return jsonify({
+        "team1": best_t1, 
+        "team2": best_t2, 
+        "total1": best_sum1, 
+        "total2": best_sum2, 
+        "difference": min_diff
+    })
 
 @app.route("/swap_locked_players", methods=["POST"])
 @login_required
