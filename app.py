@@ -61,19 +61,13 @@ def load_user(user_id):
         conn.close()
 
 @app.before_request
-def handle_session_logic():
-    if request.path.startswith('/static/') or request.endpoint == 'favicon': 
-        return
+def require_login():
+    # List of endpoints that don't require logging in
+    # ADD 'register' TO THIS LIST
+    allowed_routes = ['login', 'register', 'static'] 
     
-    session.permanent = True
-    # ADD 'repair_database_v2' to this list below:
-    AUTH_EXEMPT = {"login", "logout", "standings_leaderboard_page"}
-    endpoint = (request.endpoint or "").split(".")[-1]
-    
-    if endpoint not in AUTH_EXEMPT and not current_user.is_authenticated:
-        if request.is_json or request.path.startswith('/api/'):
-            return jsonify({"error": "Authentication required"}), 401
-        return redirect(url_for("login"))
+    if not current_user.is_authenticated and request.endpoint not in allowed_routes:
+        return redirect(url_for('login'))
 
 @app.route('/favicon.ico')
 def favicon(): return '', 204
@@ -100,6 +94,39 @@ def login():
             return redirect(url_for('teams_page'))
         return "Invalid username or password", 401
     return render_template('login.html')
+    
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '').strip()
+        
+        if not username or not password:
+            return "Username and password are required", 400
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Check if username is already taken
+        cur.execute("SELECT id FROM users WHERE username = %s", (username,))
+        if cur.fetchone():
+            conn.close()
+            return "Username already exists", 400
+
+        # Create new user (Non-admin by default)
+        hashed_pw = generate_password_hash(password)
+        cur.execute(
+            "INSERT INTO users (username, password_hash, is_admin) VALUES (%s, %s, %s)",
+            (username, hashed_pw, False) # Use False instead of 0
+        )
+        
+        conn.commit()
+        conn.close()
+        
+        # After registering, send them to login
+        return render_template('login.html')
+
+    render_template('login.html') 
 
 @app.route("/logout")
 @login_required
@@ -374,7 +401,7 @@ def results_entry_page():
 
 @app.route("/standings")
 @login_required
-def standings_leaderboard_page():
+def standings_page():
     """Displays the current leaderboard."""
     conn = get_db_connection()
     cur = conn.cursor()
