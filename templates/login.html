@@ -26,43 +26,69 @@
   .note { margin-top:10px; font-size:0.9rem; color:#666; }
 </style>
 {% endblock %}
-
 {% block content %}
-<div class="login-card" role="main" aria-labelledby="loginHeading">
-  <h1 id="loginHeading">Sign in</h1>
+<div class="login-container" style="display: flex; justify-content: center; align-items: center; min-height: 80vh;">
+    <div class="login-card" style="width: 100%; max-width: 400px; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); background: white;">
+        
+        <div class="auth-tabs" style="display: flex; margin-bottom: 20px; border-bottom: 1px solid #eee;">
+            <button onclick="showAuth('login')" id="login-tab" style="flex: 1; padding: 10px; border: none; background: none; cursor: pointer; border-bottom: 2px solid #007bff; font-weight: bold;">Sign In</button>
+            <button onclick="showAuth('register')" id="register-tab" style="flex: 1; padding: 10px; border: none; background: none; cursor: pointer; color: #666;">Register</button>
+        </div>
 
-  {% if error %}
-    <div class="err" role="alert">{{ error }}</div>
-  {% endif %}
+        <div id="login-form">
+            <h2 style="margin-bottom: 20px;">Welcome Back</h2>
+            <form method="POST" action="{{ url_for('login') }}">
+                <div class="form-row" style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px;">Username</label>
+                    <input type="text" name="username" required style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                </div>
+                <div class="form-row" style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 5px;">Password</label>
+                    <input type="password" name="password" required style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">Sign In</button>
+            </form>
+        </div>
 
-  <form method="post" action="{{ url_for('login') }}" autocomplete="on" novalidate>
-    <div class="form-row">
-      <label for="username">Username</label>
-      <input id="username" name="username" type="text" autocomplete="username" required autofocus
-             value="{{ request.form.username or '' }}">
+        <div id="register-form" style="display: none;">
+            <h2 style="margin-bottom: 20px;">Create Account</h2>
+            <form method="POST" action="{{ url_for('register') }}">
+                <div class="form-row" style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px;">Choose Username</label>
+                    <input type="text" name="username" required style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                </div>
+                <div class="form-row" style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 5px;">Set Password</label>
+                    <input type="password" name="password" required style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 10px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">Create Account</button>
+            </form>
+        </div>
     </div>
-
-    <div class="form-row">
-      <label for="password">Password</label>
-      <input id="password" name="password" type="password" autocomplete="current-password" required>
-    </div>
-
-    <div style="display:flex; align-items:center; gap:10px;">
-      <button type="submit" class="btn">Sign in</button>
-      <a class="small-link" href="{{ url_for('login') }}?action=recover">Forgot password?</a>
-    </div>
-
-    <div class="note">Admin demo credentials: <strong>admin / (your password)</strong></div>
-  </form>
 </div>
 
 <script>
-  // small UX: focus username, show simple client-side validation
-  (function(){
-    try {
-      const u = document.getElementById('username');
-      if (u && !u.value) u.focus();
-    } catch(e){ /* ignore */ }
-  })();
+function showAuth(type) {
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const loginTab = document.getElementById('login-tab');
+    const registerTab = document.getElementById('register-tab');
+
+    if (type === 'login') {
+        loginForm.style.display = 'block';
+        registerForm.style.display = 'none';
+        loginTab.style.borderBottom = '2px solid #007bff';
+        loginTab.style.fontWeight = 'bold';
+        registerTab.style.borderBottom = 'none';
+        registerTab.style.fontWeight = 'normal';
+    } else {
+        loginForm.style.display = 'none';
+        registerForm.style.display = 'block';
+        registerTab.style.borderBottom = '2px solid #28a745';
+        registerTab.style.fontWeight = 'bold';
+        loginTab.style.borderBottom = 'none';
+        loginTab.style.fontWeight = 'normal';
+    }
+}
 </script>
 {% endblock %}
