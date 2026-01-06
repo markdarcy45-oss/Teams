@@ -29,6 +29,8 @@
 
 <script>
 (async function(){
+  // --- INITIALIZATION ---
+  const isAdmin = {{ 'true' if current_user.is_admin else 'false' }};
   const gamesSel = document.getElementById('gamesSelect');
   const btnNewGame = document.getElementById('btnNewGame');
   const newGameName = document.getElementById('newGameName');
@@ -36,19 +38,19 @@
   const playersList = document.getElementById('playersList');
   const msg = document.getElementById('messages');
 
-  // --- ADMIN ONLY BUTTONS ---
   const btnAdd = document.getElementById('addPlayerBtn'); 
   const btnSave = document.getElementById('savePlayersBtn');
 
-  function showMsg(s,color='#c00'){ msg.style.color=color; msg.textContent=s; }
+  function showMsg(s, color='#c00'){ msg.style.color=color; msg.textContent=s; }
   function clearMsg(){ msg.textContent=''; }
 
-  // fetch helpers
+  // --- FETCH HELPERS ---
   async function fget(url){
     const res = await fetch(url, { credentials: 'same-origin' });
     if(!res.ok) { const t = await res.text(); throw new Error(t || res.statusText); }
     return res.json();
   }
+
   async function fpost(url, body){
     const res = await fetch(url, {
       method:'POST', credentials:'same-origin',
@@ -61,6 +63,7 @@
     }
     return res.json();
   }
+
   async function fdelete(url, body){
     const res = await fetch(url, {
       method:'DELETE', credentials:'same-origin',
@@ -74,127 +77,94 @@
     return res.json();
   }
 
+  // --- CORE LOGIC ---
   async function loadGames(){
     try{
       clearMsg();
       const games = await fget('/api/games');
       gamesSel.innerHTML = '';
-      const empty = document.createElement('option'); empty.value=''; empty.text='-- choose game --';
+
+      const empty = document.createElement('option');
+      empty.value='';
+      empty.text='-- choose game --';
       gamesSel.appendChild(empty);
-      games.forEach(g => {
+
+      games.forEach((g, index) => {
         const o = document.createElement('option');
-        o.value = g.id; o.text = g.name;
+        o.value = String(g.id);
+        o.textContent = g.name;
         gamesSel.appendChild(o);
+
+        if (index === 0) {
+          gamesSel.value = o.value;
+        }
       });
-    }catch(e){ showMsg('Error loading games: '+e.message); }
+    } catch(e){
+      showMsg('Error loading games: ' + e.message);
+    }
   }
 
   async function loadPlayersForGame(gameId){
+    if (!gameId) {
+      playersList.innerHTML = '';
+      showMsg('No game selected.');
+      return;
+    }
     try{
       clearMsg();
-      const url = gameId ? `/api/players?game_id=${encodeURIComponent(gameId)}` : '/api/players';
-      const players = await fget(url);
+      const players = await fget(`/api/players?game_id=${encodeURIComponent(gameId)}`);
       renderPlayersList(players);
-    }catch(e){ showMsg('Error loading players: '+e.message); }
+    } catch(e){
+      showMsg('Error loading players: ' + e.message);
+    }
   }
 
   function renderPlayersList(items){
     playersList.innerHTML = '';
     const rows = Array.isArray(items) ? items : [];
-    if(rows.length === 0){
-      renderPlayersList([{name:''}]);
+    if (rows.length === 0) {
+      const li = document.createElement('li');
+      li.textContent = 'No players found for this game.';
+      li.style.fontStyle = 'italic';
+      li.style.color = '#555';
+      playersList.appendChild(li);
       return;
     }
-    rows.forEach((entry, idx) => {
-      const name = (typeof entry === 'string') ? entry : (entry.name || '');
-      const id = (typeof entry === 'object' && entry.id) ? entry.id : null;
 
+    rows.forEach(entry => {
+      const name = entry?.name || '';
       const li = document.createElement('li');
       li.style.marginBottom='6px';
-      if(id) li.dataset.playerId = String(id);
 
       const input = document.createElement('input');
-      input.type='text'; input.value = name || ''; input.placeholder = 'player name';
+      input.type='text';
+      input.value = name;
+      input.placeholder='player name';
       input.style.width='320px';
-
-      // Only show/enable inputs and remove buttons for Admins
-      if (!btnAdd) input.disabled = true; 
+      if (!isAdmin) input.disabled = true;
 
       li.appendChild(input);
-
-      if (btnAdd) { // If btnAdd exists, user is admin
-          const btnRem = document.createElement('button');
-          btnRem.textContent='Remove'; btnRem.style.marginLeft='8px';
-          btnRem.onclick = async (ev) => {
-            ev.preventDefault();
-            clearMsg();
-            const pid = li.dataset.playerId ? Number(li.dataset.playerId) : null;
-            if(!pid){ li.remove(); return; }
-            if(!confirm('Remove player from database?')) return;
-            try{
-              await fdelete('/api/players', { id: pid });
-              li.remove();
-              showMsg('Player removed', '#080');
-            }catch(err){ showMsg('Remove failed: ' + err.message, '#c00'); }
-          };
-          li.appendChild(btnRem);
-      }
       playersList.appendChild(li);
     });
   }
 
-  // --- WRAP ADMIN ACTIONS IN IF BLOCKS ---
-  if (btnAdd) {
-      btnAdd.onclick = ()=> {
-        const li = document.createElement('li');
-        li.style.marginBottom='6px';
-        const input = document.createElement('input');
-        input.type='text'; input.placeholder='player name'; input.style.width='320px';
-        const btnRem = document.createElement('button'); btnRem.textContent='Remove'; btnRem.style.marginLeft='8px';
-        btnRem.onclick = ()=> li.remove();
-        li.appendChild(input); li.appendChild(btnRem);
-        playersList.appendChild(li);
-        input.focus();
-      };
-  }
-
-  if (btnSave) {
-      btnSave.onclick = async ()=> {
-        const inputs = Array.from(playersList.querySelectorAll('li input'));
-        const players = inputs.map(i=>i.value.trim()).filter(Boolean);
-        if(players.length === 0){ showMsg('Add at least one player'); return; }
-        const payload = {};
-        const gid = gamesSel.value;
-        if(gid) payload.game_id = Number(gid);
-        else {
-          const nm = newGameName.value && newGameName.value.trim();
-          if(!nm){ showMsg('Enter name for new game or select an existing game'); return; }
-          payload.name = nm;
-        }
-        payload.players = players;
-        try{
-          clearMsg();
-          const resp = await fpost('/players', payload);
-          showMsg('Saved: '+resp.name, '#080');
-          await loadGames();
-          if(resp.id){ gamesSel.value = resp.id; }
-          await loadPlayersForGame(resp.id || gid || null);
-        }catch(e){ showMsg('Save failed: '+ e.message); }
-      };
-  }
-
-  // --- ACCESSIBLE TO EVERYONE ---
-  btnNewGame.onclick = ()=> {
-    if(!btnAdd) { showMsg('Only admins can create games'); return; }
-    newGameName.style.display = newGameName.style.display === 'none' ? 'inline-block' : 'none';
-    if(newGameName.style.display !== 'none') { newGameName.focus(); gamesSel.value = ''; }
-  };
-
-  btnLoad.onclick = async ()=> {
+  // --- EVENT LISTENERS ---
+  btnLoad.onclick = async () => {
     const gid = gamesSel.value;
-    await loadPlayersForGame(gid || null);
+    if (!gid) { showMsg('Please select a game first.'); return; }
+    await loadPlayersForGame(gid);
   };
 
+  btnNewGame.onclick = () => {
+    if(!isAdmin){ showMsg('Only admins can create games'); return; }
+    newGameName.style.display =
+      newGameName.style.display === 'none' ? 'inline-block' : 'none';
+    if(newGameName.style.display !== 'none'){ newGameName.focus(); gamesSel.value=''; }
+  };
+
+  gamesSel.onchange = () => clearMsg();
+
+  // --- INITIAL LOAD ---
   await loadGames();
 })();
 </script>
