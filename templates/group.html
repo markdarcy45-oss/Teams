@@ -1,0 +1,146 @@
+{% extends "base.html" %} {% block title %}Group - {{ game_name }}{% endblock %} {% block content %}
+<div class="page-container">
+    <div class="panel">
+        <div style="border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom: 20px">
+            <h1 class="section-title" style="margin-bottom: 5px">Group</h1>
+            <div style="display: flex; gap: 20px; color: var(--text-muted); font-size: 0.9rem">
+                <span><strong>Game name:</strong> {{ game_name }}</span>
+                <span><strong>Group:</strong> {{ members|length }} members</span>
+            </div>
+        </div>
+
+        <div style="overflow-x: auto">
+            <table style="width: 100%; border-collapse: collapse; min-width: 500px">
+                <thead>
+                    <tr style="text-align: left; border-bottom: 2px solid var(--border); color: var(--text-muted)">
+                        <th style="padding: 12px">Username</th>
+                        <th style="padding: 12px">Profile</th>
+                        {% if is_page_admin %}
+                        <th style="padding: 12px; text-align: right">Actions</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in members %}
+                    <tr style="border-bottom: 1px solid var(--border)">
+                        <td style="padding: 12px; font-weight: 500">
+                            {{ m.username }} {% if m.username == current_user.username %}
+                            <span style="font-size: 0.7rem; color: var(--primary); margin-left: 5px">(You)</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 12px">
+                            <span class="badge {{ 'badge-admin' if m.role == 'Admin' else 'badge-readonly' }}">
+                                {{ m.role }}
+                            </span>
+                        </td>
+                        {% if is_page_admin %}
+                        <td style="padding: 12px; text-align: right">
+                            {% if m.username != current_user.username %}
+                            <button class="btn-action" onclick="toggleRole('{{ m.username }}', '{{ m.role }}')">
+                                Make {{ 'Read-only' if m.role == 'Admin' else 'Admin' }}
+                            </button>
+                            {% else %}
+                            <span style="font-size: 0.8rem; color: var(--text-muted); font-style: italic">Owner</span>
+                            {% endif %}
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Badge Styling */
+    .badge {
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        display: inline-block;
+    }
+    .badge-admin {
+        background-color: #fef3c7;
+        color: #92400e;
+        border: 1px solid #f59e0b;
+    }
+    .badge-readonly {
+        background-color: #e0f2fe;
+        color: #075985;
+        border: 1px solid #0ea5e9;
+    }
+
+    /* Action Button Styling */
+    .btn-action {
+        background: white;
+        border: 1px solid var(--border);
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: #475569;
+    }
+    .btn-action:hover {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+        color: var(--primary);
+    }
+
+    /* Layout Helpers */
+    .page-container {
+        padding: 20px;
+    }
+    .panel {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        padding: 30px;
+        box-shadow: var(--shadow);
+        max-width: 900px;
+        margin: 0 auto;
+    }
+</style>
+
+<script>
+    /**
+     * Communicates with the /api/update_member_role endpoint
+     * to flip a user's role between Admin and Read-only.
+     */
+    async function toggleRole(targetUsername, currentRole) {
+        const newRole = currentRole === "Admin" ? "Read-only" : "Admin";
+
+        // Confirmation dialog to prevent accidental changes
+        const confirmed = confirm(`Are you sure you want to change ${targetUsername} to ${newRole}?`);
+        if (!confirmed) return;
+
+        try {
+            const response = await fetch("/api/update_member_role", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    username: targetUsername,
+                    role: newRole,
+                }),
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                // Refresh the page to show the new badges and updated Action column
+                window.location.reload();
+            } else {
+                alert("Error: " + (result.error || "Failed to update role."));
+            }
+        } catch (error) {
+            console.error("Role update failed:", error);
+            alert("A network error occurred. Please try again.");
+        }
+    }
+</script>
+{% endblock %}
