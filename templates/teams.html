@@ -1,610 +1,508 @@
-{% extends "base.html" %}
+{% extends "base.html" %} {% block title %}Teams{% endblock %} {% block content %}
+<div class="page-container">
+    <div class="panel-grid">
+        <div class="panel selection-panel">
+            <h2 class="section-title">Availability</h2>
 
-{% block title %}Teams{% endblock %}
+            <div class="input-group">
+                <label for="gameDate">Game Date</label>
+                <input type="date" id="gameDate" class="modern-input" />
+            </div>
 
-{% block content %}
+            <div class="input-group">
+                <label for="numPlayers">Match Size</label>
+                <select id="numPlayers" class="modern-input">
+                    <option value="10">10 Players (5v5)</option>
+                    <option value="12">12 Players (6v6)</option>
+                </select>
+            </div>
 
-<div class="page">
-  <div class="panel-grid">
+            <div class="selection-header">
+                <span id="selectedCounter" class="counter">Selected 0 / 10</span>
+                <div class="mini-actions">
+                    <button id="checkAll" class="text-btn">All</button>
+                    <button id="uncheckAll" class="text-btn">None</button>
+                </div>
+            </div>
 
-    <!-- LEFT PANEL -->
-<div class="panel left">
-  <h2>Select Available Players</h2>
+            <div class="player-list-container" id="playerList"></div>
 
-  <label for="gameDate"><strong>Game Date:</strong></label>
-  <input type="date" id="gameDate" />
-
-  <p class="hint">
-    Pick exactly <strong>10</strong> or <strong>12</strong> players, then click
-    <button class="btn inline small" id="generateHint"
-      title="Click to generate teams; click again to reshuffle">
-      Generate / Reshuffle
-    </button>.
-  </p>
-
-  <label for="numPlayers">Number of Players:</label>
-  <select id="numPlayers">
-    <option value="10">10</option>
-    <option value="12">12</option>
-  </select>
-
-<div style="margin:8px 0;">
-  <span id="selectedCounter">Selected 0 / 10</span>
-  <span id="dateStatus"
-        style="margin-left:12px;color:#666;font-size:0.95em;"></span>
-</div>
-
-<!-- ✅ REQUIRED: Player list container -->
-<div class="player-list" id="playerList"></div>
-
-<!-- Embedded players JSON (ONCE) -->
-<script id="players-data" type="application/json">
-  {{ players | tojson }}
-</script>
-
-<div class="btn-row" style="margin-top:10px;">
-    <button id="checkAll" class="btn small">Check all</button>
-    <button id="uncheckAll" class="btn small">Uncheck all</button>
-</div>
-
-<div class="btn-row" style="margin-top:12px;">
-  <button id="generateBtn" class="btn primary" disabled>
-    Generate Teams
-  </button>
-</div>
-
-
-  <div style="font-size:0.85em;color:#666;margin-top:6px;">
-    <small id="generateHintText">
-      Generate teams for selected Game Date. Click again to reshuffle.
-    </small>
-  </div>
-
-  <div id="status" style="margin-top:10px;color:green;display:none;">
-    ✅ <span id="statusText">Teams generated</span>
-  </div>
-</div>
-
-    <!-- RIGHT PANEL -->
-    <div class="panel right">
-      <h2>Teams</h2>
-
-      <div class="teams-row">
-        <div class="team-card" id="team1Card">
-          <div class="team-header hdr-orange">
-            <strong>Orange Team</strong>
-            <span id="team1Total" class="team-total">Total: 0</span>
-          </div>
-          <ul id="team1List" class="team-list"></ul>
-          <div class="team-footer"><span id="team1Count">0 players</span></div>
+            <div class="action-footer">
+                <button id="generateBtn" class="btn primary full-width" disabled>Generate / Reshuffle</button>
+            </div>
         </div>
 
-        <div class="team-card" id="team2Card">
-          <div class="team-header hdr-yellow">
-            <strong>Yellow Team</strong>
-            <span id="team2Total" class="team-total">Total: 0</span>
-          </div>
-          <ul id="team2List" class="team-list"></ul>
-          <div class="team-footer"><span id="team2Count">0 players</span></div>
+        <div class="panel teams-panel">
+            <h2 class="section-title">Matchup</h2>
+
+            <div class="teams-display">
+                <div class="team-card orange">
+                    <div class="team-header">
+                        <input type="text" id="team1Name" class="team-name-input" value="Orange" required />
+                        <span id="team1Total" class="total-pill">0</span>
+                    </div>
+                    <ul id="team1List" class="team-roster"></ul>
+                </div>
+
+                <div class="team-card yellow">
+                    <div class="team-header">
+                        <input type="text" id="team2Name" class="team-name-input" value="Yellow" required />
+                        <span id="team2Total" class="total-pill">0</span>
+                    </div>
+                    <ul id="team2List" class="team-roster"></ul>
+                </div>
+            </div>
+
+            <div class="balance-bar">Rank Difference: <strong id="rankDiff">0</strong></div>
+
+            <div class="control-card swap-card">
+                <h3>Manual Swap</h3>
+                <div class="swap-controls">
+                    <select id="swapA" class="modern-input">
+                        <option value="">Orange Player</option>
+                    </select>
+                    <div class="swap-icon">⇌</div>
+                    <select id="swapB" class="modern-input">
+                        <option value="">Yellow Player</option>
+                    </select>
+                    <button id="swapBtn" class="btn secondary" disabled>Swap</button>
+                </div>
+            </div>
+
+            {% if current_user.is_admin %}
+            <div class="control-card admin-card">
+                <h3>Admin Actions</h3>
+                <div class="admin-btns">
+                    <button id="lockBtn" class="btn success">Lock Teams</button>
+                    <button id="unlockBtn" class="btn warning" style="display: none">Unlock Teams</button>
+                </div>
+                <div id="lockMsg" class="lock-feedback"></div>
+            </div>
+            {% endif %}
         </div>
-      </div>
-
-      <div style="margin-top:12px;">
-        <div>Rank difference: <strong id="rankDiff">0</strong></div>
-      </div>
-
-      <!-- Swap control -->
-      <div class="swap-area" style="margin-top:14px;">
-        <label><strong>Swap players (cross-team only)</strong></label>
-        <div style="display:flex;gap:8px;align-items:center;margin-top:6px;">
-          <select id="swapA"><option value="">Choose player A</option></select>
-          <select id="swapB"><option value="">Choose player B</option></select>
-          <button id="swapBtn" class="btn primary" disabled>Swap</button>
-        </div>
-        <div style="font-size:0.9em;color:#666;margin-top:6px;">
-          Choose A from Orange, B from Yellow. Swap persists only if a Game Date is set.
-        </div>
-      </div>
-
-<div style="margin-top:14px; display:flex; gap:12px; align-items:center;">
-        {% if current_user.is_admin %}
-          <label style="margin-right:6px;"><strong>Admin Actions:</strong></label>
-          <button id="lockBtn">Lock Teams</button>
-          <button id="unlockBtn">Unlock Teams</button>
-          <a id="goResultsBtn" href="/results" class="btn primary">Go To Results</a>
-        {% endif %}
-      </div>
-
-      <div id="lockMsg" style="margin-top:10px;color:green;"></div>
     </div>
-  </div>
 </div>
+
+<script id="players-data" type="application/json">
+    {{ players | tojson }}
+</script>
 
 <style>
-  /* layout + colors */
-  .page { padding: 8px 12px; }
-  .panel-grid { display:flex; gap:24px; align-items:flex-start; flex-wrap:wrap; }
-  .panel { background: #fff; padding:16px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
-  .left { width: 340px; }
-  .right { flex:1; min-width:520px; }
-  .player-list { border:1px solid #e6e6e6; height:360px; overflow:auto; padding:12px; margin-top:10px; border-radius:6px; background:#fafafa; }
-  .player-item { display:flex; align-items:center; gap:8px; padding:6px 4px; }
-  .player-item label { flex:1; display:flex; justify-content:space-between; gap:8px; font-size:14px; }
-  .player-item .pill { background:#eef3ff; border-radius:12px; padding:2px 8px; font-size:12px; color:#27418a; }
-  .btn { padding:8px 12px; border-radius:6px; border:1px solid #cfcfcf; cursor:pointer; background:#fff; }
-  .btn.small { padding:6px 8px; font-size:12px; }
-  .btn.inline { border: none; padding: 0; background: transparent; color:#2A6FDB; text-decoration:underline; }
-  /* Primary / Generate & Swap (blue) */
-  .btn.primary { background:#2A6FDB; color:#fff; border-color:#2A6FDB; }
-  /* Lock (red) */
-  .btn.lock { background:#C62828; color:#fff; border-color:#C62828; }
-  /* Unlock (orange) */
-  .btn.unlock { background:#FFB74D; color:#222; border-color:#FFB74D; }
-  /* Go to Results (green) */
-  .btn.results { background:#1B9E5A; color:#fff; border-color:#1B9E5A; }
-  .btn-row { margin-top:8px; display:flex; gap:8px; }
-  .teams-row{ display:flex; gap:18px; margin-top:8px; flex-wrap:wrap; }
-  .team-card { width:48%; border:1px solid #e6e6e6; border-radius:6px; overflow:hidden; background:#fff; min-width:260px; }
-  .team-header { padding:10px 12px; display:flex; justify-content:space-between; align-items:center; }
-  .hdr-orange { background:#ffa726; color:#222; }
-  .hdr-yellow { background:#ffd700; color:#222; } /* bright yellow */
-  .team-list { list-style:none; margin:0; padding:0; min-height:160px; }
-  .team-list li { padding:10px 12px; border-top:1px solid #f0f0f0; display:flex; justify-content:space-between; align-items:center; font-size:15px; }
-  .team-footer { padding:10px 12px; color:#666; font-size:13px; }
-  .team-total { font-weight:700; }
-  .swap-area select { min-width:160px; padding:6px; }
-  @media (max-width:880px){
-    .panel-grid { flex-direction:column; }
-    .left { width: auto; }
-    .team-card { width:100%; }
-  }
+    .page-container {
+        padding: 20px;
+        background: #f8fafc;
+        min-height: 100vh;
+    }
+    .panel-grid {
+        display: flex;
+        gap: 24px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    .panel {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    .selection-panel {
+        width: 340px;
+        flex-shrink: 0;
+    }
+    .teams-panel {
+        flex-grow: 1;
+    }
+    .section-title {
+        margin-top: 0;
+        font-size: 1.2rem;
+    }
+    .input-group {
+        margin-bottom: 15px;
+    }
+    .input-group label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    .modern-input {
+        width: 100%;
+        padding: 8px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+    }
+    .selection-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .text-btn {
+        background: #f1f5f9;
+        border: 1px solid var(--border);
+        color: #475569;
+        padding: 5px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.8rem;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+    .text-btn:hover {
+        background: #e2e8f0;
+        color: var(--primary);
+    }
+
+    .player-list-container {
+        border: 1px solid var(--border);
+        height: 350px;
+        overflow-y: auto;
+        border-radius: 6px;
+        margin-bottom: 15px;
+    }
+    .player-item {
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .player-item label {
+        flex: 1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+    }
+    .rank-pill {
+        font-size: 0.7rem;
+        background: #e2e8f0;
+        padding: 2px 6px;
+        border-radius: 10px;
+    }
+    .teams-display {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+    .team-card {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .team-header {
+        padding: 10px;
+        display: flex;
+        justify-content: space-between;
+        background: #f8fafc;
+    }
+    .orange .team-header {
+        border-bottom: 3px solid #fb923c;
+    }
+    .yellow .team-header {
+        border-bottom: 3px solid #facc15;
+    }
+    .team-name-input {
+        /* Remove default styling to make it look like text */
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: 4px;
+
+        /* Inherit header font traits */
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1e293b;
+
+        /* Layout management */
+        width: 75%;
+        padding: 2px 6px;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    /* Visual feedback only on interaction */
+    .team-name-input:hover {
+        background: rgba(255, 255, 255, 0.6);
+        border-color: #cbd5e1;
+    }
+
+    .team-name-input:focus {
+        background: #fff;
+        border-color: var(--primary);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        cursor: text;
+    }
+    .team-roster {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        min-height: 150px;
+    }
+    .team-roster li {
+        padding: 8px 12px;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: space-between;
+    }
+    .total-pill {
+        font-weight: bold;
+    }
+    .balance-bar {
+        margin: 15px 0;
+        padding: 10px;
+        background: #f1f5f9;
+        border-radius: 6px;
+        text-align: center;
+    }
+    .control-card {
+        margin-top: 20px;
+        padding: 15px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: #fafafa;
+    }
+    .control-card h3 {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        margin-top: 0;
+    }
+    .btn {
+        padding: 10px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        font-weight: bold;
+        display: inline-block;
+    }
+    .btn.primary {
+        background: var(--primary);
+        color: white;
+    }
+    .btn.success {
+        background: var(--success);
+        color: white;
+    }
+    .btn.warning {
+        background: var(--warning);
+        color: white;
+    }
+    .btn.secondary {
+        background: white;
+        border: 1px solid var(--border);
+    }
+    .full-width {
+        width: 100%;
+        display: block;
+    }
+    .swap-controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .lock-feedback {
+        margin-top: 10px;
+        font-size: 0.9rem;
+        font-weight: bold;
+    }
 </style>
 
-<!-- ---------- Client script (complete, robust) ---------- -->
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-  // DOM refs
-  
-  const playerListEl = document.getElementById("playerList");
-  const playersDataEl = document.getElementById("players-data");
-  const numPlayersSel = document.getElementById("numPlayers");
-  const selectedCounter = document.getElementById("selectedCounter");
-  const generateBtn = document.getElementById("generateBtn");
-  const checkAllBtn = document.getElementById("checkAll");
-  const uncheckAllBtn = document.getElementById("uncheckAll");
+    document.addEventListener("DOMContentLoaded", function () {
+        const dateInput = document.getElementById("gameDate");
+        const playerListEl = document.getElementById("playerList");
+        const numPlayersSel = document.getElementById("numPlayers");
+        const generateBtn = document.getElementById("generateBtn");
+        const lockBtn = document.getElementById("lockBtn");
+        const unlockBtn = document.getElementById("unlockBtn");
+        const lockMsg = document.getElementById("lockMsg");
 
-// --- Check / Uncheck handlers ---
-if (checkAllBtn) {
-  checkAllBtn.addEventListener("click", () => {
-    document
-      .querySelectorAll("#playerList input[type='checkbox']")
-      .forEach(cb => cb.checked = true);
+        let players = JSON.parse(document.getElementById("players-data").textContent || "[]");
+        window.currentTeam1 = [];
+        window.currentTeam2 = [];
 
-    updateSelectedCounter();
-    validateSelection();
-  });
-}
+        // 1. CLEAN RENDER PLAYER LIST (SORTED)
+        function renderPlayerList() {
+            players.sort((a, b) => (a.player || "").localeCompare(b.player || ""));
+            playerListEl.innerHTML = players
+                .map(
+                    (p) => `
+                    <div class="player-item">
+                        <label>
+                            <div style="display:flex; align-items:center;">
+                                <input type="checkbox" data-name="${p.player}" class="player-cb">
+                                <span style="margin-left:10px">${p.player}</span>
+                            </div>
+                            <span class="rank-pill">Rank ${p.rank}</span>
+                        </label>
+                    </div>
+                `
+                )
+                .join("");
 
-if (uncheckAllBtn) {
-  uncheckAllBtn.addEventListener("click", () => {
-    document
-      .querySelectorAll("#playerList input[type='checkbox']")
-      .forEach(cb => cb.checked = false);
-
-    updateSelectedCounter();
-    validateSelection();
-  });
-}
-
-  const dateInput = document.getElementById("gameDate");
-  const dateStatus = document.getElementById("dateStatus");
-  const statusBox = document.getElementById("status");
-  const statusText = document.getElementById("statusText");
-
-  const team1List = document.getElementById("team1List");
-  const team2List = document.getElementById("team2List");
-  const team1TotalEl = document.getElementById("team1Total");
-  const team2TotalEl = document.getElementById("team2Total");
-  const team1CountEl = document.getElementById("team1Count");
-  const team2CountEl = document.getElementById("team2Count");
-  const rankDiffEl = document.getElementById("rankDiff");
-
-  const swapA = document.getElementById("swapA");
-  const swapB = document.getElementById("swapB");
-  const swapBtn = document.getElementById("swapBtn");
-
-  const lockBtn = document.getElementById("lockBtn");
-  const unlockBtn = document.getElementById("unlockBtn");
-  // goToResultsLink in template
-  const goResultsBtn = document.getElementById("goToResultsLink");
-  // single lock message element (we will use this)
-  // (we do not declare lockMsg here to avoid duplicate declarations — safeGetEl will resolve below)
-
-  // safe JSON parse of players var
-  let players = [];
-  try {
-    const txt = playersDataEl && (playersDataEl.textContent || playersDataEl.innerText) || "[]";
-    players = JSON.parse(txt);
-    if (!Array.isArray(players)) players = [];
-  } catch (e) {
-    console.error("Failed to parse players JSON:", e);
-    players = [];
-  }
-
-  // runtime state: teams arrays of {Player, Rank}
-  window.currentTeam1 = [];
-  window.currentTeam2 = [];
-  let lastSelection = [];
-
-  // small helpers
-  function esc(s){ return String(s || "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;"); }
-
-  // Render player checkbox list
-  function renderPlayerList() {
-    if (!playerListEl) return;
-    if (!players || players.length === 0) {
-      playerListEl.innerHTML = '<div style="padding:18px;color:#666;">No players available — check RankView / DB.</div>';
-      return;
-    }
-    const html = players.map(p => {
-      const safeId = 'pl_' + String(p.player).replace(/\s+/g,'_').replace(/[^\w\-]/g,'');
-      return `<div class="player-item">
-                <label for="${safeId}">
-                  <span>${esc(p.player)}</span>
-                  <span class="pill">Rank ${esc(String(p.rank))}</span>
-                </label>
-                <input type="checkbox" id="${safeId}" data-name="${esc(p.player)}" />
-              </div>`;
-    }).join("");
-    playerListEl.innerHTML = html;
-    // attach handlers to checkboxes
-    playerListEl.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-      cb.addEventListener("change", () => {
-        updateSelectedCounter();
-        validateSelection();
-      });
-    });
-    updateSelectedCounter();
-    validateSelection();
-  }
-
-  /* set Game Date to today's local date if the field is empty */
-  (function setDefaultGameDate() {
-    function todayLocal() {
-      const d = new Date();
-      const yyyy = d.getFullYear();
-      const mm = String(d.getMonth() + 1).padStart(2, '0');
-      const dd = String(d.getDate()).padStart(2, '0');
-      return `${yyyy}-${mm}-${dd}`;
-    }
-    try {
-      const inp = document.getElementById('gameDate');
-      if (inp && !inp.value) {
-        inp.value = todayLocal();
-        const evt = new Event('change', { bubbles: true });
-        inp.dispatchEvent(evt);
-      }
-    } catch (e) {
-      console.warn("Could not set default game date:", e);
-    }
-  })();
-
-  function getSelectedPlayers() {
-    const checks = playerListEl.querySelectorAll('input[type="checkbox"]');
-    return Array.from(checks).filter(cb => cb.checked).map(cb => cb.dataset.name);
-  }
-
-  function updateSelectedCounter() {
-    const sel = getSelectedPlayers();
-    const target = parseInt(numPlayersSel.value || "0", 10);
-    if (selectedCounter) selectedCounter.textContent = `Selected ${sel.length} / ${target}`;
-    // date status
-    if (!dateInput.value) {
-      dateStatus.textContent = "Game Date required";
-      dateStatus.style.color = "#c33";
-    } else {
-      dateStatus.textContent = "";
-    }
-  }
-
-  // Enable Generate only when date is present and exact number selected
-  function validateSelection() {
-    const sel = getSelectedPlayers();
-    const target = parseInt(numPlayersSel.value || "0", 10);
-    const ok = (sel.length === target) && Boolean(dateInput.value);
-    if (generateBtn) generateBtn.disabled = !ok;
-    return ok;
-  }
-
-  // quick check/uncheck
-  if (checkAllBtn) checkAllBtn.addEventListener("click", () => {
-    playerListEl.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
-    updateSelectedCounter(); validateSelection();
-  });
-  if (uncheckAllBtn) uncheckAllBtn.addEventListener("click", () => {
-    playerListEl.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
-    updateSelectedCounter(); validateSelection();
-  });
-  if (numPlayersSel) numPlayersSel.addEventListener("change", () => { updateSelectedCounter(); validateSelection(); });
-  if (dateInput) dateInput.addEventListener("change", () => { updateSelectedCounter(); validateSelection(); });
-
-  // Generate (also acts as Reshuffle if clicked again with same selection)
-generateBtn && generateBtn.addEventListener("click", async () => {
-    if (!validateSelection()) { alert("Pick a Game Date and the exact number of players first"); return; }
-    const sel = getSelectedPlayers();
-    try {
-        // CHANGED: 'players' key matches app.py
-        const payload = { players: sel, num_players: parseInt(numPlayersSel.value,10), date: dateInput.value };
-        const resp = await fetch("/generate_teams", {
-            method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(payload)
-        });
-        const json = await resp.json();
-        if (!resp.ok) { alert(json.error || "Error"); return; }
-        
-        renderTeams(json.team1 || [], json.team2 || [], json.total1 || 0, json.total2 || 0, json.difference || 0);
-        statusBox.style.display = "block";
-    } catch (err) { alert("Network error"); }
-});
-
-  // -------- Swap helpers (robust) --------
-  function escapeHtml(s) { return esc(s); }
-  function makeOptionsFromNames(names, placeholder) {
-    let out = `<option value="">${esc(placeholder||"Choose player")}</option>`;
-    names.forEach(n => out += `<option value="${esc(n)}">${esc(n)}</option>`);
-    return out;
-  }
-
-  window.populateSwapSelects = function() {
-    try {
-      const t1 = (window.currentTeam1 || []).map(p => p.player).slice();
-      const t2 = (window.currentTeam2 || []).map(p => p.player).slice();
-      t1.sort((a,b) => a.localeCompare(b, undefined, {sensitivity:'base'}));
-      t2.sort((a,b) => a.localeCompare(b, undefined, {sensitivity:'base'}));
-      if (swapA) swapA.innerHTML = makeOptionsFromNames(t1, "Choose player A");
-      if (swapB) swapB.innerHTML = makeOptionsFromNames(t2, "Choose player B");
-      updateSwapButtonState();
-    } catch (err) {
-      console.warn("populateSwapSelects error", err);
-    }
-  };
-
-  function updateSwapButtonState() {
-    if (!swapBtn) return;
-    const aVal = swapA ? swapA.value : "";
-    const bVal = swapB ? swapB.value : "";
-    swapBtn.disabled = !(aVal && bVal);
-  }
-
-  if (swapA) swapA.addEventListener("change", function() { updateSwapButtonState(); });
-  if (swapB) swapB.addEventListener("change", updateSwapButtonState);
-
-  if (swapBtn) {
-    swapBtn.addEventListener("click", async function() {
-      const nameA = (swapA.value || "").trim();
-      const nameB = (swapB.value || "").trim();
-      if (!nameA || !nameB) { alert("Choose two players (A from Orange, B from Yellow)"); return; }
-
-      // validate cross-team
-      const idxA = (window.currentTeam1||[]).findIndex(x=>x.player===nameA);
-      const idxB = (window.currentTeam2||[]).findIndex(x=>x.player===nameB);
-      if (idxA === -1 || idxB === -1) {
-        alert("Chosen players are not on the expected teams. Please regenerate teams.");
-        return;
-      }
-
-      // swap objects
-      const objA = window.currentTeam1.splice(idxA,1)[0];
-      const objB = window.currentTeam2.splice(idxB,1)[0];
-      window.currentTeam1.splice(idxA, 0, objB);
-      window.currentTeam2.splice(idxB, 0, objA);
-
-      // recalc totals and re-render (so UI lists refresh)
-      const total1 = window.currentTeam1.reduce((s,p)=>s + (p.rank||0), 0);
-      const total2 = window.currentTeam2.reduce((s,p)=>s + (p.rank||0), 0);
-      renderTeams(window.currentTeam1, window.currentTeam2, total1, total2, Math.abs(total1 - total2));
-
-      // persist swap only if a date is set (best-effort)
-      const date = (dateInput && dateInput.value) ? dateInput.value.trim() : "";
-      if (date) {
-        try {
-          const resp = await fetch("/swap_locked_players", {
-            method: "POST",
-            headers: {"Content-Type":"application/json"},
-            body: JSON.stringify({ Date: date, player1: nameA, player2: nameB })
-          });
-          const j = await resp.json().catch(()=>({}));
-          if (!resp.ok) {
-            lockMsgEl.style.color = "orange";
-            lockMsgEl.textContent = "Swap applied locally but failed to persist.";
-            console.warn("Swap persistence failed:", j);
-          } else {
-            lockMsgEl.style.color = "green";
-            lockMsgEl.textContent = `Swap persisted for ${date}`;
-          }
-        } catch (e) {
-          console.warn("Network error persisting swap", e);
-          lockMsgEl.style.color = "orange";
-          lockMsgEl.textContent = "Swap applied locally; network persistence failed.";
+            playerListEl.querySelectorAll(".player-cb").forEach((cb) => {
+                cb.addEventListener("change", validateSelection);
+            });
         }
-      }
-      // clear selects to avoid accidental repeat
-      populateSwapSelects();
-    });
-  }
 
-  // Render teams into UI and populate swap selects
-// Render teams into UI and populate swap selects
-function renderTeams(t1, t2, total1=0, total2=0, diff=0) {
-    // FIX: Check for both lowercase 'player/name' and uppercase 'Player/Name'
-    window.currentTeam1 = (t1 || []).map(x => ({ 
-        player: x.player || x.Name || x.name || "Unknown", 
-        rank: x.rank || x.Rank || 0 
-    }));
-    window.currentTeam2 = (t2 || []).map(x => ({ 
-        player: x.player || x.Name || x.name || "Unknown", 
-        rank: x.rank || x.Rank || 0 
-    }));
-
-    // Populate Orange Team List
-    if (team1List) {
-      team1List.innerHTML = ""; // This clears the old list for the reshuffle
-      window.currentTeam1.forEach(p => {
-        const li = document.createElement("li");
-        li.innerHTML = `<span>${esc(p.player)}</span><span>${esc(String(p.rank))}</span>`;
-        team1List.appendChild(li);
-      });
-    }
-
-    // Populate Yellow Team List
-    if (team2List) {
-      team2List.innerHTML = ""; // This clears the old list for the reshuffle
-      window.currentTeam2.forEach(p => {
-        const li = document.createElement("li");
-        li.innerHTML = `<span>${esc(p.player)}</span><span>${esc(String(p.rank))}</span>`;
-        team2List.appendChild(li);
-      });
-    }
-
-    // Update Totals and Count Display
-    if (team1TotalEl) team1TotalEl.textContent = `Total: ${total1}`;
-    if (team2TotalEl) team2TotalEl.textContent = `Total: ${total2}`;
-    if (team1CountEl) team1CountEl.textContent = `${window.currentTeam1.length} players`;
-    if (team2CountEl) team2CountEl.textContent = `${window.currentTeam2.length} players`;
-    if (rankDiffEl) rankDiffEl.textContent = diff;
-
-    // Refresh swap dropdowns
-    if (typeof populateSwapSelects === 'function') {
-      populateSwapSelects();
-    }
-  }
-
-// -------- Lock / Unlock / Go to Results handlers --------
-  // safe helpers & element resolution
-  function safeGetEl(id) {
-    return document.getElementById(id) || document.querySelector('.network-status') || document.querySelector('#lockMsg') || null;
-  }
-
-  async function safeParseJson(resp) {
-    try {
-      const text = await resp.text();
-      if (!text) return { ok: true, body: null };
-      try { return { ok: true, body: JSON.parse(text) }; } catch (e) { return { ok: false, body: text }; }
-    } catch (err) { return { ok: false, body: null }; }
-  }
-
-  // get UI elements up-front and guard for missing elements
-  const lockMsgEl = safeGetEl('lockMsg') || (function(){ const d=document.createElement('div'); d.style.display='none'; document.body.appendChild(d); return d; })();
-  const lockBtnEl = lockBtn || null;
-  const unlockBtnEl = unlockBtn || null;
-  const generateBtnEl = generateBtn || null;
-  const goResultsBtnEl = goResultsBtn || null;
-  const dateInputEl = dateInput || document.getElementById('gameDate') || document.getElementById('gameDateInput') || null;
-
-  // Utility to show messages
-  function showMsg(el, text, color) {
-    if (!el) { console.warn('showMsg: no element to show message:', text); return; }
-    el.style.color = color || 'black';
-    el.textContent = text;
-  }
-
-  // ---------- Lock handler (robust) ----------
-if (lockBtnEl) lockBtnEl.addEventListener('click', async function () {
-    const date = dateInputEl ? dateInputEl.value : '';
-    if (!date) { alert('Pick a Date'); return; }
-
-    // Map the current teams into the format app.py expects
-    const payload = { 
-        date: date, 
-        team1: window.currentTeam1.map(p => ({ player: p.player })), 
-        team2: window.currentTeam2.map(p => ({ player: p.player })) 
-    };
-
-    try {
-        const resp = await fetch('/lock_teams', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        if (resp.ok) {
-            showMsg(lockMsgEl, `Locked for ${date}`, 'green');
-        } else {
-            const err = await resp.json();
-            showMsg(lockMsgEl, 'Error: ' + err.message, 'red');
+        function validateSelection() {
+            const selected = playerListEl.querySelectorAll("input:checked").length;
+            const target = parseInt(numPlayersSel.value);
+            document.getElementById("selectedCounter").textContent = `Selected ${selected} / ${target}`;
+            generateBtn.disabled = !(selected === target && dateInput.value);
         }
-    } catch (err) { showMsg(lockMsgEl, 'Network Error', 'red'); }
-});
 
-  // ---------- Unlock handler (robust) ----------
-  if (unlockBtnEl) unlockBtnEl.addEventListener('click', async function () {
-    const date = dateInputEl && dateInputEl.value ? dateInputEl.value.trim() : '';
-    if (!date) { alert('Pick a valid Game Date'); return; }
+        // 2. CLEAN RENDER TEAMS (SORTED)
+        function renderTeams(t1, t2, tot1, tot2, diff) {
+            window.currentTeam1 = t1;
+            window.currentTeam2 = t2;
 
-    unlockBtnEl.disabled = true;
-    showMsg(lockMsgEl, 'Unlocking teams...', 'black');
+            // Sort by Rank Ascending (Low-to-High), then Name A-Z
+            const sortByRankAndName = (a, b) => {
+                // If ranks are different, sort by Rank (1, 2, 3...)
+                if (a.rank !== b.rank) {
+                    return a.rank - b.rank;
+                }
+                // If ranks are identical, sort by Name (A-Z)
+                return (a.player || "").localeCompare(b.player || "");
+            };
 
-    try {
-      const resp = await fetch('/unlock_teams', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ Date: date })
-      });
+            const displayT1 = [...t1].sort(sortByRankAndName);
+            const displayT2 = [...t2].sort(sortByRankAndName);
 
-      const parsed = await safeParseJson(resp);
+            document.getElementById("team1List").innerHTML = displayT1
+                .map((p) => `<li><span>${p.player}</span><strong>${p.rank}</strong></li>`)
+                .join("");
+            document.getElementById("team2List").innerHTML = displayT2
+                .map((p) => `<li><span>${p.player}</span><strong>${p.rank}</strong></li>`)
+                .join("");
 
-      if (!resp.ok) {
-        let errMsg = `Server error ${resp.status}`;
-        if (parsed.ok && parsed.body && typeof parsed.body === 'object' && parsed.body.error) {
-          errMsg = parsed.body.error + (parsed.body.detail ? ' — ' + parsed.body.detail : '');
-        } else if (!parsed.ok && parsed.body) { errMsg = parsed.body; }
-        showMsg(lockMsgEl, 'Unlock failed: ' + errMsg, 'red');
-        unlockBtnEl.disabled = false;
-        return;
-      }
+            document.getElementById("team1Total").textContent = tot1;
+            document.getElementById("team2Total").textContent = tot2;
+            document.getElementById("rankDiff").textContent = diff;
 
-      const body = parsed.ok ? parsed.body : null;
-      if (body && body.unlocked && body.unlocked.Date) {
-        showMsg(lockMsgEl, `Unlocked teams for ${body.unlocked.Date}`, 'green');
-      } else {
-        showMsg(lockMsgEl, `Unlocked teams for ${date}`, 'green');
-      }
+            document.getElementById("swapA").innerHTML = displayT1
+                .map((p) => `<option value="${p.player}">${p.player}</option>`)
+                .join("");
+            document.getElementById("swapB").innerHTML = displayT2
+                .map((p) => `<option value="${p.player}">${p.player}</option>`)
+                .join("");
+            document.getElementById("swapBtn").disabled = false;
+        }
 
-      if (generateBtnEl) generateBtnEl.disabled = false;
-      if (goResultsBtnEl) goResultsBtnEl.disabled = true;
-      unlockBtnEl.disabled = false;
+        // 3. UI CONTROLS & EVENTS
+        document.getElementById("checkAll").onclick = () => {
+            playerListEl.querySelectorAll("input").forEach((i) => (i.checked = true));
+            validateSelection();
+        };
+        document.getElementById("uncheckAll").onclick = () => {
+            playerListEl.querySelectorAll("input").forEach((i) => (i.checked = false));
+            validateSelection();
+        };
 
-    } catch (err) {
-      console.error('Unlock error', err);
-      showMsg(lockMsgEl, 'Network error unlocking teams', 'red');
-      unlockBtnEl.disabled = false;
-    }
-  });
+        numPlayersSel.onchange = validateSelection;
+        dateInput.onchange = () => {
+            validateSelection();
+            checkLockStatus();
+        };
 
-  // ---------- Date Change handler (FIX FOR RESULTS LINK) ----------
-  if (dateInputEl) {
-    dateInputEl.addEventListener('change', function() {
-      const date = dateInputEl.value;
-      if (goResultsBtnEl && date) {
-        // This dynamically updates the link to /results?date=YYYY-MM-DD
-        goResultsBtnEl.href = `/results?date=${date}`;
-      }
+        generateBtn.onclick = async () => {
+            const selected = Array.from(playerListEl.querySelectorAll("input:checked")).map((cb) => cb.dataset.name);
+            const resp = await fetch("/generate_teams", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ players: selected, date: dateInput.value }),
+            });
+            const data = await resp.json();
+            renderTeams(data.team1, data.team2, data.total1, data.total2, data.difference);
+        };
+
+        function updateLockUI(isLocked) {
+            if (!lockBtn) return;
+            lockBtn.style.display = isLocked ? "none" : "inline-block";
+            unlockBtn.style.display = isLocked ? "inline-block" : "none";
+            generateBtn.style.display = isLocked ? "none" : "inline-block";
+            lockMsg.textContent = isLocked ? "Teams are finalized." : "";
+            lockMsg.style.color = "green";
+        }
+
+        async function checkLockStatus() {
+            if (!dateInput.value) return;
+            try {
+                const resp = await fetch(`/check_lock?date=${dateInput.value}`);
+                const data = await resp.json();
+                updateLockUI(data.locked);
+                if (data.locked && data.team1) {
+                    renderTeams(data.team1, data.team2, data.total1, data.total2, data.difference);
+                }
+            } catch (e) {
+                console.warn("Check lock status unavailable");
+            }
+        }
+
+        if (lockBtn) {
+            lockBtn.onclick = async () => {
+                const name1 = document.getElementById("team1Name").value.trim();
+                const name2 = document.getElementById("team2Name").value.trim();
+                if (!name1 || !name2) {
+                    alert("Both team names are mandatory.");
+                    return;
+                }
+
+                const payload = {
+                    date: dateInput.value,
+                    team1_name: name1,
+                    team2_name: name2,
+                    team1: window.currentTeam1.map((p) => ({ player: p.player })),
+                    team2: window.currentTeam2.map((p) => ({ player: p.player })),
+                };
+                const resp = await fetch("/lock_teams", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                });
+                if (resp.ok) updateLockUI(true);
+            };
+        }
+
+        if (unlockBtn) {
+            unlockBtn.onclick = async () => {
+                const resp = await fetch("/unlock_teams", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ Date: dateInput.value }),
+                });
+                if (resp.ok) updateLockUI(false);
+            };
+        }
+
+        document.getElementById("swapBtn").onclick = async () => {
+            const p1 = document.getElementById("swapA").value;
+            const p2 = document.getElementById("swapB").value;
+            const idx1 = window.currentTeam1.findIndex((p) => p.player === p1);
+            const idx2 = window.currentTeam2.findIndex((p) => p.player === p2);
+            const obj1 = window.currentTeam1[idx1];
+            const obj2 = window.currentTeam2[idx2];
+            window.currentTeam1[idx1] = obj2;
+            window.currentTeam2[idx2] = obj1;
+
+            const tot1 = window.currentTeam1.reduce((acc, p) => acc + (p.rank || 0), 0);
+            const tot2 = window.currentTeam2.reduce((acc, p) => acc + (p.rank || 0), 0);
+            renderTeams(window.currentTeam1, window.currentTeam2, tot1, tot2, Math.abs(tot1 - tot2));
+
+            await fetch("/swap_locked_players", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ Date: dateInput.value, player1: p1, player2: p2 }),
+            });
+        };
+
+        // Initialize
+        renderPlayerList();
+        if (!dateInput.value) dateInput.value = new Date().toISOString().split("T")[0];
+        checkLockStatus();
     });
-    
-    // Set initial state if date is already present
-    if (dateInputEl.value && goResultsBtnEl) {
-        goResultsBtnEl.href = `/results?date=${dateInputEl.value}`;
-    }
-  }
-
-  // render the player list now that everything is wired
-  renderPlayerList();
-  updateSelectedCounter();
-  validateSelection();
-
-
-  // Pre-populate swap selects if teams exist (no-op until teams are generated)
-  if (typeof populateSwapSelects === 'function') { populateSwapSelects(); }
-
-});
 </script>
-
 {% endblock %}
