@@ -1,171 +1,156 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <title>{% block title %}Teams App{% endblock %}</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-<style>
-  :root {
-    --bg:#fafafa; --panel:#fff; --shadow:0 1px 8px rgba(0,0,0,.08);
-    --ink:#222; --muted:#666; --brand:#2a6fdb;
-    --active-color: #ffd54f; /* Yellow highlight color */
-  }
-  
-  * { box-sizing: border-box; }
-  
-  body { 
-    margin: 0; 
-    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; 
-    background: var(--bg); 
-    color: var(--ink); 
-  }
-  
-  nav {
-    background: #333; 
-    color: #fff; 
-    display: flex; 
-    align-items: center; 
-    gap: 15px;
-    padding: 10px 20px; 
-    position: sticky; 
-    top: 0; 
-    z-index: 10;
-  }
-  
-  nav a {
-    color: #fff; 
-    text-decoration: none; 
-    font-weight: 600;
-    padding: 6px 12px;
-    transition: color 0.2s;
-  }
-  
-  nav a:hover { opacity: 0.8; }
-  
-  /* --- YELLOW UNDERLINE STYLE --- */
-	header a.active, nav a.active {
-    color: var(--active-color) !important;
-    text-decoration: underline !important;
-    text-underline-offset: 6px;
-    text-decoration-thickness: 2px;
-  }
-  }
+    <head>
+        <meta charset="utf-8" />
+        <title>{% block title %}Teams App{% endblock %}</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <style>
+            :root {
+                --primary: #2563eb;
+                --success: #16a34a;
+                --warning: #ea580c;
+                --border: #e2e8f0;
+                --text-muted: #64748b;
+                --bg: #f8fafc;
+                --panel: #ffffff;
+                --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+                --nav-active: #ffd54f;
+            }
 
-  .container {
-    max-width: 1100px; 
-    margin: 22px auto; 
-    background: var(--panel); 
-    border-radius: 10px;
-    box-shadow: var(--shadow); 
-    padding: 18px;
-  }
-  
-.profile-admin {
-    background-color: #d4edda;
-    color: #155724;
-    font-weight: bold;
-    padding: 2px 8px;
-    border-radius: 4px;
-    border: 1px solid #c3e6cb;
-}
+            * {
+                box-sizing: border-box;
+            }
 
-.profile-readonly {
-    background-color: #cce5ff;
-    color: #004085;
-    padding: 2px 8px;
-    border-radius: 4px;
-    border: 1px solid #b8daff;
-}
-</style>
+            body {
+                margin: 0;
+                font-family:
+                    system-ui,
+                    -apple-system,
+                    sans-serif;
+                background: var(--bg);
+                color: #1e293b;
+            }
 
-  {% block head %}{% endblock %}
-</head>
-<body>
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+            a.active {
+                color: var(--nav-active) !important;
+                border-bottom: 2px solid var(--nav-active);
+            }
+            header a:hover {
+                opacity: 0.8;
+            }
+        </style>
+        {% block head %}{% endblock %}
+    </head>
+    <body>
+        {% if request.endpoint != 'login' and request.endpoint != 'register' %}
+        <header
+            style="
+                background-color: #333;
+                color: white;
+                padding: 10px 20px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            "
+        >
+            <div style="display: flex; gap: 20px; align-items: center">
+                <a
+                    href="{{ url_for('group_page') }}"
+                    class="{{ 'active' if request.endpoint == 'group_page' }}"
+                    style="color: white; text-decoration: none; font-weight: bold"
+                >
+                    Group
+                </a>
 
-{% if request.endpoint != 'login' %}
-<header style="background-color: #333; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center;">
+                <a
+                    href="{{ url_for('players_page_render') }}"
+                    class="{{ 'active' if request.endpoint == 'players_page_render' }}"
+                    style="color: white; text-decoration: none; font-weight: bold"
+                >
+                    Players
+                </a>
 
-  <div style="display: flex; gap: 20px;">
-    <a href="{{ url_for('players_page_render') }}" 
-       class="{{ 'active' if request.endpoint == 'players_page_render' }}"
-       style="color: white; text-decoration: none; font-weight: bold;">
-      Players
-    </a>
+                <a
+                    href="{{ url_for('teams_page') }}"
+                    class="{{ 'active' if request.endpoint == 'teams_page' }}"
+                    style="color: white; text-decoration: none; font-weight: bold"
+                >
+                    Teams
+                </a>
 
-    <a href="{{ url_for('teams_page') }}" 
-       class="{{ 'active' if request.endpoint == 'teams_page' }}"
-       style="color: white; text-decoration: none; font-weight: bold;">
-      Teams
-    </a>
+                <a
+                    href="{{ url_for('standings_page') }}"
+                    class="{{ 'active' if request.endpoint == 'standings_page' }}"
+                    style="color: white; text-decoration: none; font-weight: bold"
+                >
+                    Standings
+                </a>
+            </div>
 
-    <a href="{{ url_for('standings_page') }}" 
-       class="{{ 'active' if request.endpoint == 'standings_page' }}"
-       style="color: white; text-decoration: none; font-weight: bold;">
-      Standings
-    </a>
-  </div>
+            <div style="display: flex; align-items: center; gap: 10px">
+                {% if current_user.is_authenticated %}
+                <span style="font-size: 0.9rem; color: #ccc">
+                    Logged in as <strong>{{ current_user.username }}</strong> |
+                </span>
 
-  <div style="display: flex; align-items: center; gap: 10px;">
-    {% if current_user.is_authenticated %}
+                {% if current_user.is_admin %}
+                <span
+                    style="
+                        background-color: #28a745;
+                        color: white;
+                        padding: 2px 8px;
+                        border-radius: 4px;
+                        font-size: 0.75rem;
+                        font-weight: bold;
+                        letter-spacing: 0.4px;
+                    "
+                >
+                    Admin
+                </span>
+                {% else %}
+                <span
+                    style="
+                        background-color: #007bff;
+                        color: white;
+                        padding: 2px 8px;
+                        border-radius: 4px;
+                        font-size: 0.75rem;
+                        font-weight: bold;
+                        letter-spacing: 0.4px;
+                    "
+                >
+                    Read-only
+                </span>
+                {% endif %}
 
-      <span style="font-size: 0.9rem; color: #ccc;">
-        Logged in as <strong>{{ current_user.username }}</strong> |
-      </span>
+                <a
+                    href="{{ url_for('logout') }}"
+                    style="
+                        background-color: #dc3545;
+                        color: white;
+                        padding: 2px 8px;
+                        border-radius: 4px;
+                        font-size: 0.75rem;
+                        font-weight: bold;
+                        letter-spacing: 0.4px;
+                        text-decoration: none;
+                        margin-left: 5px;
+                    "
+                >
+                    Logout
+                </a>
+                {% endif %}
+            </div>
+        </header>
+        {% endif %}
 
-      {% if current_user.is_admin %}
-        <span style="
-          background-color: #28a745;
-          color: white;
-          padding: 2px 8px;
-          border-radius: 4px;
-          font-size: 0.75rem;
-          font-weight: bold;
-          letter-spacing: 0.4px;
-        ">
-          Admin
-        </span>
-      {% else %}
-        <span style="
-          background-color: #007bff;
-          color: white;
-          padding: 2px 8px;
-          border-radius: 4px;
-          font-size: 0.75rem;
-          font-weight: bold;
-          letter-spacing: 0.4px;
-        ">
-          Read-only
-        </span>
-      {% endif %}
+        <div class="container">{% block content %}{% endblock %}</div>
 
-		<a href="{{ url_for('logout') }}"
-		style="
-			background-color: #dc3545;
-			color: white;
-			padding: 2px 8px;
-			border-radius: 4px;
-			font-size: 0.75rem;
-			font-weight: bold;
-			letter-spacing: 0.4px;
-			text-decoration: none;
-			margin-left: 5px;
-		">
-  Logout
-</a>
-
-
-    {% endif %}
-  </div>
-
-</header>
-{% endif %}
-
-
-<div class="container">
-  {% block content %}{% endblock %}
-</div>
-
-{% block scripts %}{% endblock %}
-
-</body>
+        {% block scripts %}{% endblock %}
+    </body>
 </html>
