@@ -1,94 +1,170 @@
-{% extends "base.html" %}
-
-{% block title %}Sign in{% endblock %}
-
-{% block head %}
+{% extends "base.html" %} {% block title %}Sign in{% endblock %} {% block head %}
 <style>
-  .login-card {
-    max-width: 420px;
-    margin: 32px auto;
-    padding: 20px;
-    background: #fff;
-    border-radius: 10px;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-  }
-  .login-card h1 { margin: 0 0 12px; font-size: 1.4rem; }
-  .form-row { margin-bottom: 12px; }
-  label { display:block; font-weight:600; margin-bottom:6px; }
-  input[type="text"], input[type="password"] {
-    width:100%; padding:10px 12px; border-radius:6px; border:1px solid #ddd;
-    font-size:14px;
-  }
-  .hint { color:#666; font-size:0.9rem; margin-top:6px; }
-  .err { color:#b91c1c; margin-bottom:8px; font-weight:600; }
-  .btn { display:inline-block; padding:10px 14px; border-radius:8px; background:#2a6fdb; color:#fff; border:none; cursor:pointer; font-weight:600; }
-  .small-link { margin-left:12px; font-size:0.9rem; color:#2a6fdb; text-decoration:none; vertical-align:middle; }
-  .note { margin-top:10px; font-size:0.9rem; color:#666; }
+    .page-container {
+        padding: 40px 20px;
+        background: var(--bg);
+        min-height: 85vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .panel {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        width: 100%;
+        max-width: 400px;
+    }
+
+    .auth-tabs {
+        display: flex;
+        margin-bottom: 25px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .tab-btn {
+        flex: 1;
+        padding: 12px;
+        border: none;
+        background: none;
+        cursor: pointer;
+        color: var(--text-muted);
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .form-row {
+        margin-bottom: 18px;
+    }
+    .form-row label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: bold;
+        margin-bottom: 6px;
+        color: #334155;
+    }
+
+    .modern-input {
+        width: 100%;
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        box-sizing: border-box;
+    }
+
+    .btn {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        font-weight: bold;
+        transition: 0.2s;
+        font-size: 1rem;
+    }
+    .btn.primary {
+        background: var(--primary);
+        color: white;
+    }
+    .btn.success {
+        background: var(--success);
+        color: white;
+    }
+    .btn:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
 </style>
-{% endblock %}
-{% block content %}
-<div class="login-container" style="display: flex; justify-content: center; align-items: center; min-height: 80vh;">
-    <div class="login-card" style="width: 100%; max-width: 400px; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); background: white;">
-        
-        <div class="auth-tabs" style="display: flex; margin-bottom: 20px; border-bottom: 1px solid #eee;">
-            <button onclick="showAuth('login')" id="login-tab" style="flex: 1; padding: 10px; border: none; background: none; cursor: pointer; border-bottom: 2px solid #007bff; font-weight: bold;">Sign In</button>
-            <button onclick="showAuth('register')" id="register-tab" style="flex: 1; padding: 10px; border: none; background: none; cursor: pointer; color: #666;">Register</button>
+{% endblock %} {% block content %}
+<div class="page-container">
+    <div class="panel">
+        <div class="auth-tabs">
+            <button
+                onclick="showAuth('login')"
+                id="login-tab"
+                class="tab-btn"
+                style="border-bottom: 2px solid var(--primary); color: var(--primary)"
+            >
+                Sign In
+            </button>
+            <button onclick="showAuth('register')" id="register-tab" class="tab-btn">Register</button>
         </div>
 
         <div id="login-form">
-            <h2 style="margin-bottom: 20px;">Welcome Back</h2>
+            <h2 style="margin-top: 0; margin-bottom: 20px; font-size: 1.25rem">Welcome Back</h2>
             <form method="POST" action="{{ url_for('login') }}">
-                <div class="form-row" style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 5px;">Username</label>
-                    <input type="text" name="username" required style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                <div class="form-row">
+                    <label>Username</label>
+                    <input type="text" name="username" required class="modern-input" autocomplete="username" />
                 </div>
-                <div class="form-row" style="margin-bottom: 20px;">
-                    <label style="display: block; margin-bottom: 5px;">Password</label>
-                    <input type="password" name="password" required style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                <div class="form-row">
+                    <label>Password</label>
+                    <input
+                        type="password"
+                        name="password"
+                        required
+                        class="modern-input"
+                        autocomplete="current-password"
+                    />
                 </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">Sign In</button>
+                <button type="submit" class="btn primary">Sign In</button>
             </form>
         </div>
 
-        <div id="register-form" style="display: none;">
-            <h2 style="margin-bottom: 20px;">Create Account</h2>
+        <div id="register-form" style="display: none">
+            <h2 style="margin-top: 0; margin-bottom: 20px; font-size: 1.25rem">Create Account</h2>
             <form method="POST" action="{{ url_for('register') }}">
-                <div class="form-row" style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 5px;">Choose Username</label>
-                    <input type="text" name="username" required style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                <div class="form-row">
+                    <label>Choose Username</label>
+                    <input type="text" name="username" required class="modern-input" autocomplete="username" />
                 </div>
-                <div class="form-row" style="margin-bottom: 20px;">
-                    <label style="display: block; margin-bottom: 5px;">Set Password</label>
-                    <input type="password" name="password" required style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                <div class="form-row">
+                    <label>Set Password</label>
+                    <input type="password" name="password" required class="modern-input" autocomplete="new-password" />
                 </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 10px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">Create Account</button>
+                <div class="form-row">
+                    <label>Invite Code</label>
+                    <input
+                        type="text"
+                        name="invite_code"
+                        id="reg_invite_code"
+                        required
+                        class="modern-input"
+                        placeholder="Enter league code"
+                        style="text-transform: uppercase"
+                    />
+                </div>
+                <button type="submit" class="btn success">Create Account</button>
             </form>
         </div>
     </div>
 </div>
 
 <script>
-function showAuth(type) {
-    const loginForm = document.getElementById('login-form');
-    const registerForm = document.getElementById('register-form');
-    const loginTab = document.getElementById('login-tab');
-    const registerTab = document.getElementById('register-tab');
+    function showAuth(type) {
+        const loginForm = document.getElementById("login-form");
+        const registerForm = document.getElementById("register-form");
+        const loginTab = document.getElementById("login-tab");
+        const registerTab = document.getElementById("register-tab");
 
-    if (type === 'login') {
-        loginForm.style.display = 'block';
-        registerForm.style.display = 'none';
-        loginTab.style.borderBottom = '2px solid #007bff';
-        loginTab.style.fontWeight = 'bold';
-        registerTab.style.borderBottom = 'none';
-        registerTab.style.fontWeight = 'normal';
-    } else {
-        loginForm.style.display = 'none';
-        registerForm.style.display = 'block';
-        registerTab.style.borderBottom = '2px solid #28a745';
-        registerTab.style.fontWeight = 'bold';
-        loginTab.style.borderBottom = 'none';
-        loginTab.style.fontWeight = 'normal';
+        if (type === "login") {
+            loginForm.style.display = "block";
+            registerForm.style.display = "none";
+            loginTab.style.borderBottom = "2px solid var(--primary)";
+            loginTab.style.color = "var(--primary)";
+            registerTab.style.borderBottom = "none";
+            registerTab.style.color = "var(--text-muted)";
+        } else {
+            loginForm.style.display = "none";
+            registerForm.style.display = "block";
+            registerTab.style.borderBottom = "2px solid var(--success)";
+            registerTab.style.color = "var(--success)";
+            loginTab.style.borderBottom = "none";
+            loginTab.style.color = "var(--text-muted)";
+        }
     }
-}
 </script>
 {% endblock %}
