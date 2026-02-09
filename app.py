@@ -657,5 +657,8 @@ def standings_page():
     
     
 if __name__ == "__main__":
-    app.run(debug=True)
+    # Get port from environment variable, default to 10000 for Render
+    port = int(os.environ.get("PORT", 10000))
+    # In production, debug should be False
+    app.run(host='0.0.0.0', port=port, debug=False)
     
