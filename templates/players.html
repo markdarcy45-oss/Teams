@@ -1,171 +1,370 @@
-{% extends "base.html" %}
-{% block title %}Players Management{% endblock %}
+{% extends "base.html" %} {% block title %}Players Management{% endblock %} {% block content %}
+<style>
+    .page-container {
+        padding: 10px;
+        background: var(--bg);
+    }
+    .panel {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 24px;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .section-title {
+        margin-top: 0;
+        font-size: 1.5rem;
+        margin-bottom: 20px;
+        color: #1e293b;
+    }
+    .controls-row {
+        display: flex;
+        gap: 10px;
+        align-items: flex-end;
+        margin-bottom: 25px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--border);
+    }
+    .input-group {
+        flex-grow: 1;
+    }
+    .input-group label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    .modern-input {
+        width: 100%;
+        padding: 8px 12px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        font-size: 0.95rem;
+    }
+    .btn {
+        padding: 9px 16px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        font-weight: bold;
+        transition: 0.2s;
+    }
+    .btn.primary {
+        background: var(--primary);
+        color: white;
+    }
+    .btn.secondary {
+        background: white;
+        border: 1px solid var(--border);
+        color: #475569;
+    }
+    #playersList {
+        list-style: none;
+        padding: 0;
+        margin-top: 20px;
+    }
+    .player-row {
+        display: flex;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #f1f5f9;
+        gap: 12px;
+    }
+</style>
 
-{% block content %}
-<div style="max-width:900px;margin:20px auto;padding:12px;">
-  <h1>Players / Teams</h1>
+<div class="page-container">
+    <div class="panel">
+        <h1 class="section-title">Players / Teams</h1>
 
-  <div id="messages" style="margin-bottom:8px;color:#c00"></div>
+        <div id="messages" style="margin-bottom: 15px; font-weight: 600; min-height: 20px"></div>
 
-  <label><strong>Game</strong></label>
-  <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
-    <select id="gamesSelect"></select>
-    <button id="btnNewGame">New Game</button>
-    <input id="newGameName" placeholder="New game name (if creating)" style="display:none;">
-    <button id="btnLoad" style="margin-left:6px">Load Players</button>
-  </div>
+        {% if current_user.is_admin %}
+        <div
+            id="adminInviteSection"
+            style="
+                display: none;
+                margin-bottom: 20px;
+                padding: 15px;
+                background: #f0f7ff;
+                border: 1px dashed #2563eb;
+                border-radius: 8px;
+            "
+        >
+            <div
+                style="margin-top: 15px; padding: 10px; background: #f1f5f9; border-radius: 8px; display: inline-block"
+            >
+                <span style="font-weight: bold; color: #1e293b">League Invite Code: </span>
+                <span
+                    id="displayInviteCode"
+                    style="font-family: monospace; font-weight: bold; color: #2563eb; margin: 0 10px"
+                    >{{ invite_code }}</span
+                >
 
-  <div id="playersArea">
-    <div style="margin-bottom:8px;">
-    {% if current_user.is_admin %}
-      <button id="addPlayerBtn">Add Player</button>
-      <button id="savePlayersBtn">Save All Changes</button>
-    {% endif %}
+                <button
+                    type="button"
+                    onclick="copyToClipboard(this)"
+                    style="
+                        background: none;
+                        border: none;
+                        color: #64748b;
+                        cursor: pointer;
+                        text-decoration: underline;
+                        font-size: 0.8rem;
+                        padding: 0;
+                    "
+                >
+                    (Copy)
+                </button>
+            </div>
+            <small style="display: block; color: #64748b; margin-top: 8px"
+                >Share this code with new players to allow them to register for this league.</small
+            >
+        </div>
+        {% endif %}
+
+        <div class="controls-row">
+            <div class="input-group">
+                <label>Game Selection</label>
+                <select id="gamesSel" class="modern-input">
+                    <option value="">-- choose game --</option>
+                </select>
+            </div>
+
+            {% if current_user.is_admin %}
+            <input
+                id="newGameName"
+                class="modern-input"
+                placeholder="New game name"
+                style="display: none; width: 200px"
+            />
+            <button id="btnNewGame" class="btn secondary">New Game</button>
+            {% endif %}
+
+            <button id="btnLoad" class="btn primary">Load Players</button>
+        </div>
+
+        <div id="playersArea">
+            <div style="display: flex; justify-content: space-between; align-items: center">
+                <h2 style="font-size: 1.1rem; color: var(--text-muted)">Roster</h2>
+                {% if current_user.is_admin %}
+                <div style="display: flex; gap: 8px">
+                    <button id="addPlayerBtn" class="btn secondary" style="font-size: 0.85rem">Add Player</button>
+                    <button id="savePlayersBtn" class="btn primary" style="font-size: 0.85rem; background: #16a34a">
+                        Save All
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+            <ol id="playersList"></ol>
+        </div>
     </div>
-
-    <ol id="playersList" style="padding-left:20px;"></ol>
-  </div>
 </div>
-
+{% endblock %} {% block scripts %}
 <script>
-(async function(){
-  // --- INITIALIZATION ---
-  const isAdmin = {{ 'true' if current_user.is_admin else 'false' }};
-  const gamesSel = document.getElementById('gamesSelect');
-  const btnNewGame = document.getElementById('btnNewGame');
-  const newGameName = document.getElementById('newGameName');
-  const btnLoad = document.getElementById('btnLoad');
-  const playersList = document.getElementById('playersList');
-  const msg = document.getElementById('messages');
+        // 1. Handle Game Selection (Fixes the Navigation Bar)
+                if (gamesSel) {
+                    gamesSel.onchange = () => {
+                        const gid = gamesSel.value;
+                        if (!gid) return;
 
-  const btnAdd = document.getElementById('addPlayerBtn'); 
-  const btnSave = document.getElementById('savePlayersBtn');
+                        fetch(`/api/set_active_game/${gid}`, { method: 'POST' })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.ok) {
+                                    // This refreshes the page so base.html sees the
+                                    // session and reveals Teams/Standings links
+                                    window.location.reload();
+                                }
+                            });
+                    };
+                }
 
-  function showMsg(s, color='#c00'){ msg.style.color=color; msg.textContent=s; }
-  function clearMsg(){ msg.textContent=''; }
+                // 2. Handle Load Players Button
+                if (btnLoad) {
+                    btnLoad.onclick = async () => {
+                        const gid = gamesSel.value;
+                        if (!gid) {
+                            alert("Please select a game first.");
+                            return;
+                        }
 
-  // --- FETCH HELPERS ---
-  async function fget(url){
-    const res = await fetch(url, { credentials: 'same-origin' });
-    if(!res.ok) { const t = await res.text(); throw new Error(t || res.statusText); }
-    return res.json();
-  }
+                        try {
+                            const response = await fetch(`/api/players/${gid}`);
+                            const data = await response.json();
 
-  async function fpost(url, body){
-    const res = await fetch(url, {
-      method:'POST', credentials:'same-origin',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(body)
-    });
-    if(!res.ok){
-      let j; try{ j = await res.json(); }catch(e){}
-      throw new Error((j && (j.detail || j.error)) || (await res.text()) || res.statusText);
-    }
-    return res.json();
-  }
+                            playersList.innerHTML = '';
+                            if (data.length === 0) {
+                                addPlayerRow(); // Add one empty row if no players exist
+                            } else {
+                                data.forEach(p => addPlayerRow(p.name));
+                            }
+                        } catch (e) {
+                            console.error("Load failed:", e);
+                            if (msg) msg.textContent = 'Load failed.';
+                        }
+                    };
+                }
+            (async function(){
+                const msg = document.getElementById('messages');
+                const gamesSel = document.getElementById('gamesSel');
+                const playersList = document.getElementById('playersList');
 
-  async function fdelete(url, body){
-    const res = await fetch(url, {
-      method:'DELETE', credentials:'same-origin',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(body)
-    });
-    if(!res.ok){
-      let j; try{ j = await res.json(); }catch(e){}
-      throw new Error((j && (j.detail || j.error)) || (await res.text()) || res.statusText);
-    }
-    return res.json();
-  }
+                if (!gamesSel || !playersList) return;
 
-  // --- CORE LOGIC ---
-  async function loadGames(){
-    try{
-      clearMsg();
-      const games = await fget('/api/games');
-      gamesSel.innerHTML = '';
+                // Display helper
+                function showInviteCode(code) {
+                    if (msg) {
+                        if (code && code !== 'null' && code !== '') {
+                            msg.style.color = 'var(--primary)';
+                            msg.textContent = `Invite Code: ${code}`;
+                        } else {
+                            msg.textContent = '';
+                        }
+                    }
+                }
 
-      const empty = document.createElement('option');
-      empty.value='';
-      empty.text='-- choose game --';
-      gamesSel.appendChild(empty);
+                const currentActiveId = {{ active_game_id|tojson if active_game_id else 'null' }};
+                const isAdmin = {{ 'true' if current_user.is_admin else 'false' }};
 
-      games.forEach((g, index) => {
-        const o = document.createElement('option');
-        o.value = String(g.id);
-        o.textContent = g.name;
-        gamesSel.appendChild(o);
+                async function loadPlayers(gid) {
+                    try {
+                        const response = await fetch(`/api/players/${gid}`);
+                        const players = await response.json();
+                        playersList.innerHTML = '';
+                        players.forEach((p, idx) => {
+                            const li = document.createElement('li');
+                            li.className = 'player-row';
+                            li.innerHTML = `
+                                <span style="width: 20px; color: #94a3b8; font-size: 0.8rem;">${idx + 1}</span>
+                                <input type="text" class="modern-input" value="${p.name}" ${isAdmin ? '' : 'disabled'}>
+                            `;
+                            playersList.appendChild(li);
+                        });
+                    } catch (e) { console.error("Player load error:", e); }
+                }
 
-        if (index === 0) {
-          gamesSel.value = o.value;
+        async function loadGames() {
+            try {
+                const res = await fetch('/api/games');
+                const games = await res.json();
+
+                // Elements for Admin Display
+                const adminSection = document.getElementById('adminInviteSection');
+                const codeLabel = document.getElementById('displayInviteCode');
+
+                gamesSel.innerHTML = '<option value="">-- select game --</option>';
+
+                games.forEach(game => {
+                    const option = document.createElement('option');
+                    option.value = game.id;
+
+                    // CLEAN DISPLAY: Just the Name, no code in the dropdown
+                    option.textContent = game.name;
+
+                    // Keep code as a data attribute for the JS to find it easily
+                    option.setAttribute('data-code', game.invite_code || '');
+                    gamesSel.appendChild(option);
+                });
+
+                if (currentActiveId) {
+                    gamesSel.value = currentActiveId;
+                    loadPlayers(currentActiveId);
+
+                    // Show the code in the Admin section if user is admin
+                    if (adminSection && codeLabel) {
+                        const selectedOpt = gamesSel.options[gamesSel.selectedIndex];
+                        const code = selectedOpt.getAttribute('data-code');
+                        if (code) {
+                            adminSection.style.display = 'block';
+                            codeLabel.textContent = code;
+                        } else {
+                            adminSection.style.display = 'none';
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error("Games load error:", e);
+            }
         }
-      });
-    } catch(e){
-      showMsg('Error loading games: ' + e.message);
+
+        // Optional: Helper function for the Copy button
+        function copyInviteCode() {
+            const code = document.getElementById('displayInviteCode').textContent;
+            navigator.clipboard.writeText(code);
+            alert("Code copied to clipboard!");
+        }
+                // Initial Load
+                loadGames();
+
+                // UI Listeners
+                const btnNewGame = document.getElementById('btnNewGame');
+                const newGameName = document.getElementById('newGameName');
+                const btnAdd = document.getElementById('addPlayerBtn');
+                const btnSave = document.getElementById('savePlayersBtn');
+
+                if (btnNewGame && newGameName) {
+                    btnNewGame.onclick = () => {
+                        newGameName.style.display = newGameName.style.display === 'none' ? 'inline-block' : 'none';
+                        if(newGameName.style.display !== 'none'){ newGameName.focus(); gamesSel.value=''; showInviteCode(''); }
+                    };
+                }
+
+                if (btnAdd) {
+                    btnAdd.onclick = () => {
+                        const li = document.createElement('li');
+                        li.className = 'player-row';
+                        li.innerHTML = `<span style="width: 20px;"></span><input type="text" class="modern-input" placeholder="New player name">`;
+                        playersList.appendChild(li);
+                    };
+                }
+
+                if (btnSave) {
+                    btnSave.onclick = async () => {
+                        const gid = gamesSel.value;
+                        const gname = newGameName ? newGameName.value.trim() : '';
+                        const pnames = Array.from(playersList.querySelectorAll('input')).map(i => i.value.trim()).filter(v => v !== '');
+
+                        if (!gid && !gname) { return; }
+
+                        try {
+                            const response = await fetch('/api/players', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ game_id: gid || null, game_name: gname || null, players: pnames })
+                            });
+                            const data = await response.json();
+
+                            // Alert only if it's a brand new game with a new code
+                            if (data.invite_code) {
+                                alert("SUCCESS! Invite Code: " + data.invite_code);
+                            }
+
+                            if (gname) {
+                                newGameName.value = '';
+                                newGameName.style.display = 'none';
+                                await loadGames();
+                            } else {
+                                if (msg) { msg.style.color = '#16a34a'; msg.textContent = 'Saved!'; }
+                            }
+                        } catch (e) { if (msg) msg.textContent = 'Save failed.'; }
+                    };
+                }
+            })();
+    		function copyToClipboard(btn) {
+        const code = document.getElementById('displayInviteCode').innerText.trim();
+        if (!code) return;
+
+        navigator.clipboard.writeText(code).then(() => {
+            const originalText = btn.innerText;
+            btn.innerText = "(Copied!)";
+            btn.style.color = "#16a34a"; // Green feedback
+
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.style.color = "#64748b";
+            }, 2000);
+        });
     }
-  }
-
-  async function loadPlayersForGame(gameId){
-    if (!gameId) {
-      playersList.innerHTML = '';
-      showMsg('No game selected.');
-      return;
-    }
-    try{
-      clearMsg();
-      const players = await fget(`/api/players?game_id=${encodeURIComponent(gameId)}`);
-      renderPlayersList(players);
-    } catch(e){
-      showMsg('Error loading players: ' + e.message);
-    }
-  }
-
-  function renderPlayersList(items){
-    playersList.innerHTML = '';
-    const rows = Array.isArray(items) ? items : [];
-    if (rows.length === 0) {
-      const li = document.createElement('li');
-      li.textContent = 'No players found for this game.';
-      li.style.fontStyle = 'italic';
-      li.style.color = '#555';
-      playersList.appendChild(li);
-      return;
-    }
-
-    rows.forEach(entry => {
-      const name = entry?.name || '';
-      const li = document.createElement('li');
-      li.style.marginBottom='6px';
-
-      const input = document.createElement('input');
-      input.type='text';
-      input.value = name;
-      input.placeholder='player name';
-      input.style.width='320px';
-      if (!isAdmin) input.disabled = true;
-
-      li.appendChild(input);
-      playersList.appendChild(li);
-    });
-  }
-
-  // --- EVENT LISTENERS ---
-  btnLoad.onclick = async () => {
-    const gid = gamesSel.value;
-    if (!gid) { showMsg('Please select a game first.'); return; }
-    await loadPlayersForGame(gid);
-  };
-
-  btnNewGame.onclick = () => {
-    if(!isAdmin){ showMsg('Only admins can create games'); return; }
-    newGameName.style.display =
-      newGameName.style.display === 'none' ? 'inline-block' : 'none';
-    if(newGameName.style.display !== 'none'){ newGameName.focus(); gamesSel.value=''; }
-  };
-
-  gamesSel.onchange = () => clearMsg();
-
-  // --- INITIAL LOAD ---
-  await loadGames();
-})();
 </script>
 {% endblock %}
