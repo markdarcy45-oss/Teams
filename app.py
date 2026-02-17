@@ -784,9 +784,9 @@ def results_entry_page():
     return render_template("submit_results.html")
 
 
-@app.route("/submit-results")
+@app.route("/rank")
 @login_required
-def submit_results_page():
+def rank_page():
     game_id = session.get("active_game_id")
     if not game_id:
         return redirect(url_for("players_page_render"))
