@@ -1,106 +1,94 @@
 <!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8" />
-        <title>{% block title %}Teams App{% endblock %}</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <style>
-            :root {
-                --primary: #2563eb;
-                --success: #16a34a;
-                --warning: #ea580c;
-                --border: #e2e8f0;
-                --text-muted: #64748b;
-                --bg: #f8fafc;
-                --panel: #ffffff;
-                --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-                --nav-active: #ffd54f;
-            }
 
-            * {
-                box-sizing: border-box;
-            }
+<head>
+    <meta charset="utf-8" />
+    <title>{% block title %}Teams App{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        :root {
+            --primary: #2563eb;
+            --success: #16a34a;
+            --warning: #ea580c;
+            --border: #e2e8f0;
+            --text-muted: #64748b;
+            --bg: #f8fafc;
+            --panel: #ffffff;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            --nav-active: #ffd54f;
+        }
 
-            body {
-                margin: 0;
-                font-family:
-                    system-ui,
-                    -apple-system,
-                    sans-serif;
-                background: var(--bg);
-                color: #1e293b;
-            }
+        * {
+            box-sizing: border-box;
+        }
 
-            .container {
-                max-width: 1200px;
-                margin: 0 auto;
-                padding: 20px;
-            }
-            a.active {
-                color: var(--nav-active) !important;
-                border-bottom: 2px solid var(--nav-active);
-            }
-            header a:hover {
-                opacity: 0.8;
-            }
-        </style>
-        {% block head %}{% endblock %}
-    </head>
-    <body>
-        {% if request.endpoint != 'login' and request.endpoint != 'register' %}
-        <header
-            style="
+        body {
+            margin: 0;
+            font-family:
+                system-ui,
+                -apple-system,
+                sans-serif;
+            background: var(--bg);
+            color: #1e293b;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        a.active {
+            color: var(--nav-active) !important;
+            border-bottom: 2px solid var(--nav-active);
+        }
+
+        header a:hover {
+            opacity: 0.8;
+        }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+
+<body>
+    {% if request.endpoint != 'login' and request.endpoint != 'register' %}
+    <header style="
                 background-color: #333;
                 color: white;
                 padding: 10px 20px;
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-            "
-        >
-            <div style="display: flex; gap: 20px; align-items: center">
-                <a
-                    href="{{ url_for('group_page') }}"
-                    class="{{ 'active' if request.endpoint == 'group_page' }}"
-                    style="color: white; text-decoration: none; font-weight: bold"
-                >
-                    Group
-                </a>
+            ">
+        <div style="display: flex; gap: 20px; align-items: center">
+            <a href="{{ url_for('group_page') }}" class="{{ 'active' if request.endpoint == 'group_page' }}" style="color: white; text-decoration: none; font-weight: bold">
+                Group
+            </a>
 
-                <a
-                    href="{{ url_for('players_page_render') }}"
-                    class="{{ 'active' if request.endpoint == 'players_page_render' }}"
-                    style="color: white; text-decoration: none; font-weight: bold"
-                >
-                    Players
-                </a>
+            <a href="{{ url_for('players_page_render') }}" class="{{ 'active' if request.endpoint == 'players_page_render' }}" style="color: white; text-decoration: none; font-weight: bold">
+                Players
+            </a>
 
-                <a
-                    href="{{ url_for('teams_page') }}"
-                    class="{{ 'active' if request.endpoint == 'teams_page' }}"
-                    style="color: white; text-decoration: none; font-weight: bold"
-                >
-                    Teams
-                </a>
+            <a href="{{ url_for('teams_page') }}" class="{{ 'active' if request.endpoint == 'teams_page' }}" style="color: white; text-decoration: none; font-weight: bold">
+                Teams
+            </a>
 
-                <a
-                    href="{{ url_for('standings_page') }}"
-                    class="{{ 'active' if request.endpoint == 'standings_page' }}"
-                    style="color: white; text-decoration: none; font-weight: bold"
-                >
-                    Standings
-                </a>
-            </div>
+            <a href="{{ url_for('results_page') }}" class="{{ 'active' if request.endpoint == 'results_page' }}" style="color: white; text-decoration: none; font-weight: bold">
+                Results
+            </a>
+              <a href="{{ url_for('statistics_page') }}" class="{{ 'active' if request.endpoint == 'statistics_page' }}" style="color: white; text-decoration: none; font-weight: bold">
+                Statistics
+            </a>
+        </div>
 
-            <div style="display: flex; align-items: center; gap: 10px">
-                {% if current_user.is_authenticated %}
-                <span style="font-size: 0.9rem; color: #ccc">
-                    Logged in as <strong>{{ current_user.username }}</strong> |
-                </span>
+        <div style="display: flex; align-items: center; gap: 10px">
+            {% if current_user.is_authenticated %}
+            <span style="font-size: 0.9rem; color: #ccc">
+                Logged in as <strong>{{ current_user.username }}</strong> |
+            </span>
 
-                {% if current_user.is_admin %}
-                <span
-                    style="
+            {% if current_user.is_admin %}
+            <span style="
                         background-color: #28a745;
                         color: white;
                         padding: 2px 8px;
@@ -108,13 +96,11 @@
                         font-size: 0.75rem;
                         font-weight: bold;
                         letter-spacing: 0.4px;
-                    "
-                >
-                    Admin
-                </span>
-                {% else %}
-                <span
-                    style="
+                    ">
+                Admin
+            </span>
+            {% else %}
+            <span style="
                         background-color: #007bff;
                         color: white;
                         padding: 2px 8px;
@@ -122,15 +108,12 @@
                         font-size: 0.75rem;
                         font-weight: bold;
                         letter-spacing: 0.4px;
-                    "
-                >
-                    Read-only
-                </span>
-                {% endif %}
+                    ">
+                Read-only
+            </span>
+            {% endif %}
 
-                <a
-                    href="{{ url_for('logout') }}"
-                    style="
+            <a href="{{ url_for('logout') }}" style="
                         background-color: #dc3545;
                         color: white;
                         padding: 2px 8px;
@@ -140,17 +123,17 @@
                         letter-spacing: 0.4px;
                         text-decoration: none;
                         margin-left: 5px;
-                    "
-                >
-                    Logout
-                </a>
-                {% endif %}
-            </div>
-        </header>
-        {% endif %}
+                    ">
+                Logout
+            </a>
+            {% endif %}
+        </div>
+    </header>
+    {% endif %}
 
-        <div class="container">{% block content %}{% endblock %}</div>
+    <div class="container">{% block content %}{% endblock %}</div>
 
-        {% block scripts %}{% endblock %}
-    </body>
+    {% block scripts %}{% endblock %}
+</body>
+
 </html>
