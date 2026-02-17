@@ -781,7 +781,7 @@ def results_entry_page():
             return jsonify({"ok": True})
         finally:
             conn.close()
-    return render_template("submit_results.html")
+    return render_template("results_page.html")
 
 
 @app.route("/rank")
