@@ -722,41 +722,31 @@ def get_locked_teams():
     return jsonify({"success": True, "teams": teams, "Date": date_str})
 
 
-@app.route("/submit-results", methods=["GET", "POST"])
+@app.route("/results", methods=["GET", "POST"])
 @login_required
-def results_entry_page():
-    if not current_user.is_admin:
-        return jsonify({"error": "Admin access required"}), 403
-
-    """Submits match results with point validation rules."""
+def results_page():
+    """Combined results submission and standings display"""
+    
+    # Handle POST (submit results) - Admin only
     if request.method == "POST":
+        if not current_user.is_admin:
+            return jsonify({"error": "Admin access required"}), 403
+        
         data = request.get_json(silent=True) or {}
-        date_str, player_results = data.get("Date") or data.get("date"), data.get(
-            "results", []
-        )
+        date_str, player_results = data.get("Date") or data.get("date"), data.get("results", [])
         total_points = sum(int(r.get("points", 0)) for r in player_results)
         num_players = len(player_results)
-
+        
         # Validation Logic
         if num_players == 10 and total_points not in [10, 15]:
-            return (
-                jsonify(
-                    {
-                        "error": f"10 players must have 10 or 15 total points (Current: {total_points})"
-                    }
-                ),
-                400,
-            )
+            return jsonify({
+                "error": f"10 players must have 10 or 15 total points (Current: {total_points})"
+            }), 400
         if num_players == 12 and total_points not in [12, 18]:
-            return (
-                jsonify(
-                    {
-                        "error": f"12 players must have 12 or 18 total points (Current: {total_points})"
-                    }
-                ),
-                400,
-            )
-
+            return jsonify({
+                "error": f"12 players must have 12 or 18 total points (Current: {total_points})"
+            }), 400
+        
         conn = get_db_connection()
         try:
             cur = conn.cursor()
@@ -767,38 +757,28 @@ def results_entry_page():
                 game_id = cur.fetchone()["game_id"] if cur.rowcount > 0 else 1
                 cur.execute(
                     """INSERT INTO results (match_date, game_id, player_id, points, submitted_by)
-                               VALUES (%s, %s, %s, %s, %s) ON CONFLICT (player_id, match_date) 
-                               DO UPDATE SET points = EXCLUDED.points, submitted_by = EXCLUDED.submitted_by""",
-                    (
-                        date_str,
-                        game_id,
-                        res["player_id"],
-                        res["points"],
-                        current_user.id,
-                    ),
+                       VALUES (%s, %s, %s, %s, %s) ON CONFLICT (player_id, match_date) 
+                       DO UPDATE SET points = EXCLUDED.points, submitted_by = EXCLUDED.submitted_by""",
+                    (date_str, game_id, res["player_id"], res["points"], current_user.id)
                 )
             conn.commit()
             return jsonify({"ok": True})
         finally:
             conn.close()
-    return render_template("results_page.html")
-
-
-@app.route("/rank")
-@login_required
-def rank_page():
+    
+    # Handle GET (display page with standings)
     game_id = session.get("active_game_id")
     if not game_id:
         return redirect(url_for("players_page_render"))
-
+    
     conn = get_db_connection()
     cur = conn.cursor()
-    # Ensure rankview filtering logic exists or join with players
     cur.execute(
         "SELECT * FROM rankview WHERE game_id = %s ORDER BY points DESC", (game_id,)
     )
     rows = cur.fetchall()
     conn.close()
+    
     return render_template("results_page.html", rankview=rows)
 
 
