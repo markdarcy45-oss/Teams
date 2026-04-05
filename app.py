@@ -20,6 +20,10 @@ from flask_login import (
 )
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_compress import Compress  
+from flask_caching import Cache      
 
 # =================================================================
 # CONFIGURATION
@@ -27,12 +31,14 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
+Compress(app)
+cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 logging.basicConfig(level=logging.INFO)
 
 # Essential Environment Variables
 app.secret_key = os.environ.get("SECRET_KEY")
 DATABASE_URL = os.environ.get("DATABASE_URL")
-MASTER_INVITE_CODE = os.environ.get("MASTER_INVITE_CODE", "Teams2026$kL9p!")
+MASTER_INVITE_CODE = os.environ.get("MASTER_INVITE_CODE", "TEAMEQ2026ADMIN")
 
 if not DATABASE_URL:
     raise ValueError("ERROR: DATABASE_URL not found in .env file!")
@@ -81,6 +87,13 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
 
+# Flask-Limiter setup
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://",
+)
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -109,6 +122,9 @@ def require_login():
     if not current_user.is_authenticated and request.endpoint not in allowed_routes:
         return redirect(url_for("login"))
 
+@app.route('/health')
+def health():
+    return "OK", 200
 
 @app.route("/favicon.ico")
 def favicon():
@@ -121,6 +137,7 @@ def favicon():
 
 
 @app.route("/login", methods=["GET", "POST"])
+@limiter.limit("10 per minute")
 def login():
     if request.method == "POST":
         username = request.form.get("username", "").strip()
@@ -169,6 +186,7 @@ def index():
 
 
 @app.route("/register", methods=["GET", "POST"])
+@limiter.limit("5 per minute")
 def register():
     if request.method == "POST":
         username = request.form.get("username")
@@ -365,6 +383,9 @@ def group_page():
     finally:
         conn.close()
 
+@app.route('/delete-account')
+def delete_account_info():
+    return render_template('delete_account.html')
 
 @app.route("/logout")
 @login_required
@@ -785,6 +806,7 @@ def results_page():
 
 @app.route("/statistics")
 @login_required
+@cache.cached(timeout=300)
 def statistics_page():
     """Statistics page with meaningful metrics"""
     game_id = session.get("active_game_id")
