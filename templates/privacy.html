@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}Privacy Policy{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 40px auto; padding: 20px; background: white; border-radius: 8px;">
+    <h1>Privacy Policy for TeamEQ</h1>
+    <p><strong>Effective Date:</strong> March 5, 2026</p>
+    <p><strong>Last Updated:</strong> March 5, 2026</p>
+
+    <h2>1. Introduction</h2>
+    <p>
+        Welcome to TeamEQ ("we," "our," or "us"). We respect your privacy and are committed to protecting 
+        your personal data. This privacy policy explains how we collect, use, and safeguard your information 
+        when you use our sports team management application.
+    </p>
+
+    <h2>2. Information We Collect</h2>
+    
+    <h3>2.1 Account Information</h3>
+    <ul>
+        <li><strong>Username:</strong> Used for login and identification within your league</li>
+        <li><strong>Password:</strong> Stored securely using industry-standard encryption (bcrypt hashing)</li>
+        <li><strong>Email address:</strong> Not currently collected</li>
+    </ul>
+
+    <h3>2.2 Game Data</h3>
+    <ul>
+        <li><strong>Player names:</strong> Names you create for your team roster</li>
+        <li><strong>Match results:</strong> Scores, points, and game outcomes you submit</li>
+        <li><strong>Statistics:</strong> Calculated performance metrics based on match results</li>
+        <li><strong>League information:</strong> Game names, invite codes, and league memberships</li>
+    </ul>
+
+    <h3>2.3 Technical Data</h3>
+    <ul>
+        <li><strong>Session data:</strong> Temporary cookies to keep you logged in</li>
+        <li><strong>IP address:</strong> Used for rate limiting and security purposes</li>
+        <li><strong>Device information:</strong> Browser type and operating system (from standard HTTP headers)</li>
+    </ul>
+
+    <h2>3. How We Use Your Information</h2>
+    <p>We use your data solely for the following purposes:</p>
+    <ul>
+        <li><strong>App functionality:</strong> To provide team balancing, statistics tracking, and league management</li>
+        <li><strong>Authentication:</strong> To verify your identity and maintain your login session</li>
+        <li><strong>Security:</strong> To prevent abuse, spam, and unauthorized access</li>
+        <li><strong>Service improvement:</strong> To fix bugs and improve app performance</li>
+    </ul>
+
+    <h2>4. How We Store Your Data</h2>
+    <ul>
+        <li><strong>Database:</strong> Your data is stored in a secure PostgreSQL database hosted on Render.com</li>
+        <li><strong>Encryption:</strong> All data is transmitted over HTTPS (encrypted connections)</li>
+        <li><strong>Password security:</strong> Passwords are hashed using bcrypt and never stored in plain text</li>
+        <li><strong>Backups:</strong> Regular automated backups are maintained for data recovery</li>
+    </ul>
+
+    <h2>5. Data Sharing and Disclosure</h2>
+    <p><strong>We do not sell, rent, or share your personal data with third parties.</strong></p>
+    
+    <p>We may share data only in these limited circumstances:</p>
+    <ul>
+        <li><strong>With your league members:</strong> Player names, statistics, and match results are visible to other members of your league</li>
+        <li><strong>Service providers:</strong> Render.com (hosting), as required to operate the service</li>
+        <li><strong>Legal requirements:</strong> If required by law, court order, or government regulation</li>
+    </ul>
+
+    <h2>6. Data Retention</h2>
+    <ul>
+        <li><strong>Active accounts:</strong> Your data is retained as long as your account is active</li>
+        <li><strong>Deleted accounts:</strong> All data is permanently deleted within 48 hours of account deletion request</li>
+        <li><strong>Backups:</strong> Deleted data may persist in backups for up to 30 days before permanent removal</li>
+    </ul>
+
+    <h2>7. Your Rights</h2>
+    <p>You have the following rights regarding your data:</p>
+    <ul>
+        <li><strong>Access:</strong> Request a copy of your data at any time</li>
+        <li><strong>Correction:</strong> Update your username or league information through the app</li>
+        <li><strong>Deletion:</strong> Request account deletion at any time (see section 8)</li>
+        <li><strong>Data portability:</strong> Export your league data (feature coming soon)</li>
+    </ul>
+
+    <h2>8. Account Deletion</h2>
+    <p>
+        You can request deletion of your account and all associated data at any time. 
+        Visit our <a href="{{ url_for('delete_account_info') }}" style="color: #2563eb;">Account Deletion page</a> 
+        for instructions.
+    </p>
+    <p><strong>What gets deleted:</strong></p>
+    <ul>
+        <li>Your user account and login credentials</li>
+        <li>All player profiles you created</li>
+        <li>All match results and statistics</li>
+        <li>League memberships</li>
+        <li>All associated game data</li>
+    </ul>
+    <p><strong>Timeline:</strong> Your data will be permanently deleted within 48 hours of your request.</p>
+
+    <h2>9. Children's Privacy</h2>
+    <p>
+        TeamEQ is not intended for children under 13 years of age. We do not knowingly collect 
+        personal information from children under 13. If you believe we have inadvertently collected 
+        such information, please contact us immediately.
+    </p>
+
+    <h2>10. Cookies and Tracking</h2>
+    <ul>
+        <li><strong>Session cookies:</strong> Essential for login functionality (expires after 30 minutes of inactivity)</li>
+        <li><strong>No tracking cookies:</strong> We do not use advertising or analytics cookies</li>
+        <li><strong>No third-party trackers:</strong> No Google Analytics, Facebook Pixel, or similar services</li>
+    </ul>
+
+    <h2>11. International Data Transfers</h2>
+    <p>
+        Your data is stored on servers located in the United States (Render.com infrastructure). 
+        By using TeamEQ, you consent to the transfer and processing of your data in the United States.
+    </p>
+
+    <h2>12. Security Measures</h2>
+    <p>We implement industry-standard security measures including:</p>
+    <ul>
+        <li>HTTPS encryption for all data transmission</li>
+        <li>Bcrypt password hashing</li>
+        <li>Rate limiting to prevent brute force attacks</li>
+        <li>CSRF protection against cross-site attacks</li>
+        <li>Regular security updates and monitoring</li>
+    </ul>
+    <p>
+        However, no method of transmission over the internet is 100% secure. 
+        While we strive to protect your data, we cannot guarantee absolute security.
+    </p>
+
+    <h2>13. Changes to This Policy</h2>
+    <p>
+        We may update this privacy policy from time to time. Changes will be posted on this page 
+        with an updated "Last Updated" date. Continued use of TeamEQ after changes constitutes 
+        acceptance of the updated policy.
+    </p>
+
+    <h2>14. Contact Us</h2>
+    <p>If you have questions about this privacy policy or your data, please contact us:</p>
+    <ul>
+        <li><strong>Email:</strong> support@teameq.app (or your actual email)</li>
+        <li><strong>Website:</strong> https://teams-7g57.onrender.com</li>
+    </ul>
+
+    <h2>15. Compliance</h2>
+    <p>This privacy policy is designed to comply with:</p>
+    <ul>
+        <li>Google Play Developer Program Policies</li>
+        <li>General Data Protection Regulation (GDPR) - for EU users</li>
+        <li>California Consumer Privacy Act (CCPA) - for California users</li>
+        <li>Children's Online Privacy Protection Act (COPPA)</li>
+    </ul>
+
+    <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center;">
+        <a href="{{ url_for('players_page_render') }}" 
+           style="display: inline-block; padding: 12px 24px; background: #2563eb; color: white; 
+                  text-decoration: none; border-radius: 6px; font-weight: bold;">
+            ← Back to App
+        </a>
+    </div>
+</div>
+{% endblock %}
