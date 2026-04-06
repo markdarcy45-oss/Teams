@@ -3,15 +3,15 @@
 
 <head>
 
-<link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
 
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register("{{ url_for('static', filename='service-worker.js') }}");
-    });
-  }
-</script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register("{{ url_for('static', filename='service-worker.js') }}");
+            });
+        }
+    </script>
 
     <meta charset="utf-8" />
     <title>{% block title %}Teams App{% endblock %}</title>
@@ -87,7 +87,7 @@
             <a href="{{ url_for('results_page') }}" class="{{ 'active' if request.endpoint == 'results_page' }}" style="color: white; text-decoration: none; font-weight: bold">
                 Results
             </a>
-              <a href="{{ url_for('statistics_page') }}" class="{{ 'active' if request.endpoint == 'statistics_page' }}" style="color: white; text-decoration: none; font-weight: bold">
+            <a href="{{ url_for('statistics_page') }}" class="{{ 'active' if request.endpoint == 'statistics_page' }}" style="color: white; text-decoration: none; font-weight: bold">
                 Statistics
             </a>
         </div>
@@ -96,6 +96,7 @@
             {% if current_user.is_authenticated %}
             <span style="font-size: 0.9rem; color: #ccc">
                 Logged in as <strong>{{ current_user.username }}</strong> |
+                <a href="{{ url_for('delete_account_info') }}" style="color: #dc2626; text-decoration: none;">Delete Account</a> |
             </span>
 
             {% if current_user.is_admin %}
@@ -145,6 +146,13 @@
     <div class="container">{% block content %}{% endblock %}</div>
 
     {% block scripts %}{% endblock %}
+
+    <!-- Add before </body> tag -->
+    <footer style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 20px; text-align: center; margin-top: 40px; font-size: 0.85rem; color: #64748b;">
+        <a href="{{ url_for('privacy_policy') }}" style="color: #64748b; margin: 0 10px;">Privacy Policy</a>
+        <span style="display: block; margin-top: 10px;">© 2026 TeamEQ</span>
+    </footer>
 </body>
+
 
 </html>
