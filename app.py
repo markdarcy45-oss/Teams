@@ -131,8 +131,6 @@ def privacy_policy():
     """Privacy policy page - required for Google Play"""
     return render_template('privacy.html')    
     
-from flask import send_from_directory
-
 @app.route('/manifest.json')
 def serve_manifest():
     """Serve PWA manifest for app icons and metadata"""
