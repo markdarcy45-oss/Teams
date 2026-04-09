@@ -117,7 +117,7 @@ def load_user(user_id):
 def require_login():
     # List of endpoints that don't require logging in
     # ADD 'register' TO THIS LIST
-    allowed_routes = ["login", "register", "static","manifest"]
+    allowed_routes = ["login", "register", "static","serve_manifest"]
 
     if not current_user.is_authenticated and request.endpoint not in allowed_routes:
         return redirect(url_for("login"))
