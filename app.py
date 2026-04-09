@@ -134,7 +134,8 @@ def privacy_policy():
 @app.route('/manifest.json')
 def serve_manifest():
     """Serve PWA manifest for app icons and metadata"""
-    return send_from_directory('.', 'manifest.json')    
+    response = send_from_directory('.', 'manifest.json', mimetype='application/manifest+json')
+    return response 
 
 @app.route("/favicon.ico")
 def favicon():
